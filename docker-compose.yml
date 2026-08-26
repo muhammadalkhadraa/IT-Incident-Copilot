@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with pgvector extension enabled
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: it_copilot_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: it_copilot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: copilot_secure_pass_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d it_copilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ASP.NET Core 9.0 Web API Backend Service
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: it_copilot_api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=db;Database=it_copilot;Username=postgres;Password=copilot_secure_pass_2026"
+      Jwt__SecretKey: "SuperSecretKey_IT_Incident_Copilot_Enterprise_Jwt_2026!#"
+      Jwt__Issuer: "ITIncidentCopilotApi"
+      Jwt__Audience: "ITIncidentCopilotClient"
+      Ai__Provider: "OpenAI"
+      Ai__ApiKey: "${OPENAI_API_KEY}"
+    ports:
+      - "5000:80"
+
+  # n8n Workflow Automation Engine
+  automation:
+    image: n8nio/n8n:latest
+    container_name: it_copilot_n8n
+    restart: always
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  postgres_data:
+  n8n_data:

@@ -1,0 +1,71 @@
+{
+  "name": "IT Incident Copilot - P1 Escalation & Teams Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "incident-escalated",
+        "options": {}
+      },
+      "name": "Webhook Trigger (P1 Escalation)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://outlook.office.com/webhook/microsoft-teams-alert",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "text",
+              "value": "=🚨 CRITICAL P1 INCIDENT ALERT: {{ $json.body.ticketNumber }} on host {{ $json.body.hostname }}. AI Diagnosis: {{ $json.body.aiSummary }}"
+            }
+          ]
+        }
+      },
+      "name": "Send Microsoft Teams Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@corp.internal",
+        "toEmail": "marcus.vance@corp.internal",
+        "subject": "=P1 Incident Escalation: {{ $json.body.ticketNumber }}",
+        "text": "=Incident Title: {{ $json.body.title }}\nSeverity: {{ $json.body.severity }}\nTarget Device: {{ $json.body.hostname }}"
+      },
+      "name": "Send On-Call Manager Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger (P1 Escalation)": {
+      "main": [
+        [
+          {
+            "node": "Send Microsoft Teams Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Microsoft Teams Alert": {
+      "main": [
+        [
+          {
+            "node": "Send On-Call Manager Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

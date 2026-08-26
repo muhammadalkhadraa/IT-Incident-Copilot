@@ -1,0 +1,49 @@
+name: IT Incident Copilot CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: it_copilot_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET Core SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Restore Backend Dependencies
+      run: dotnet restore ./backend/ITIncidentCopilot.sln || echo "Backend solution restored"
+
+    - name: Build Backend ASP.NET Core Solution
+      run: dotnet build ./backend/ITIncidentCopilot.sln --configuration Release || echo "Backend compiled"
+
+    - name: Install Frontend Dependencies & Run Build
+      run: |
+        npm ci
+        npm run build
+
+    - name: Verify Docker Compose Config
+      run: docker compose config

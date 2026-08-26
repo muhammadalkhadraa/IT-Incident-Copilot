@@ -1,0 +1,23 @@
+# Node & Dependencies
+node_modules/
+dist/
+build/
+.cache/
+
+# .NET & C# Build Binaries
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# System & OS
+.DS_Store
+Thumbs.db
+telemetry_offline_buffer.json
+
+# Environment Secrets
+.env
+.env.local
