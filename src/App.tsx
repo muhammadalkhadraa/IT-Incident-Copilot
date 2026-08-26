@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Incident, UserProfile } from './types';
+import type { Incident, UserProfile, PlaybookAction, ActionExecutionResult } from './types';
 import { INITIAL_INCIDENTS } from './data/mockData';
 import { MOCK_USERS as INITIAL_USERS } from './data/mockUsers';
 import { Header } from './components/Header';
@@ -7,14 +7,11 @@ import { Sidebar } from './components/Sidebar';
 import { IncidentList } from './components/IncidentList';
 import { IncidentWorkstation } from './components/IncidentDetail/IncidentWorkstation';
 import { KnowledgeBase } from './components/KnowledgeBase';
-import { ManagerHub } from './components/ManagerHub';
 import { AdminControlCenter } from './components/AdminControlCenter';
 import { EmployeePortal } from './components/EmployeePortal';
 import { AssetsView } from './components/AssetsView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { AutomationsView } from './components/AutomationsView';
-import { DiagnosticEngine } from './services/diagnosticEngine';
-import { AICopilotService } from './services/aiCopilotService';
 import { AutomationWebhookEngine } from './services/automationWebhookEngine';
 
 export function App() {
@@ -46,19 +43,7 @@ export function App() {
     setSelectedIncidentId(null);
   };
 
-  // Re-run diagnostics action
-  const handleReRunDiagnostics = (incidentId: string) => {
-    setIncidents(prev => prev.map(inc => {
-      if (inc.id !== incidentId) return inc;
-      const diagResults = DiagnosticEngine.evaluateRules(inc);
-      const aiAnalysis = AICopilotService.analyzeIncident(inc);
-      return {
-        ...inc,
-        diagnosticResults: diagResults,
-        aiAnalysis: aiAnalysis
-      };
-    }));
-  };
+
 
   // Update incident status with State Machine audit logging & n8n webhook dispatch
   const handleUpdateStatus = (incidentId: string, newStatus: any, reopenReason?: string) => {
@@ -122,68 +107,59 @@ export function App() {
         {/* Main Content View Container */}
         <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-6">
           
-          {/* Workstation Detail View (If an incident is selected) */}
-          {selectedIncident ? (
-            <IncidentWorkstation
-              incident={selectedIncident}
-              onBack={() => setSelectedIncidentId(null)}
-              onUpdateStatus={handleUpdateStatus}
-              onExecutePlaybook={async () => {}}
-              onReRunDiagnostics={() => handleReRunDiagnostics(selectedIncident.id)}
-            />
-          ) : (
-            <>
-              {/* Employee Persona Portal View */}
-              {currentUser.role === 'EMPLOYEE' && activeView === 'incidents' && (
+          {/* Workstation Detail View */}
+              {/* Employee Portal View */}
+              {activeView === 'employee-portal' && (
                 <EmployeePortal
                   user={currentUser}
-                  incidents={incidents.filter(i => i.reporter.toLowerCase().includes(currentUser.name.toLowerCase()) || i.reporter === 'Sarah Connor')}
-                  onReportIncident={(title, category, description, attachmentName) => {
-                    const newIncId = `inc-${Date.now()}`;
+                  incidents={incidents}
+                  onReportIncident={(title: string, category: string, description: string, attachmentName?: string) => {
                     const newInc: Incident = {
-                      id: newIncId,
+                      id: `inc-${Date.now()}`,
                       ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
                       title,
                       description,
+                      category,
                       severity: 'MEDIUM',
                       status: 'NEW',
-                      category,
+                      affectedService: category,
                       reporter: currentUser.name,
-                      assignedTechnician: 'Unassigned',
+                      reporterId: currentUser.id,
                       createdAt: new Date().toISOString(),
                       updatedAt: new Date().toISOString(),
-                      slaDueDate: new Date(Date.now() + 14400000).toISOString(),
-                      affectedService: category,
+                      slaDueDate: new Date(Date.now() + 86400000).toISOString(),
                       deviceTelemetry: {
                         deviceId: `dev-${Date.now()}`,
-                        hostname: 'workstation-user.corp.internal',
+                        hostname: 'HOST-EXEC-PRT04',
                         os: 'Windows 11 Enterprise',
-                        ipAddress: '10.140.12.110',
+                        ipAddress: '10.140.12.88',
                         lastHeartbeat: new Date().toISOString(),
-                        agentVersion: 'v2.4.1',
+                        agentVersion: 'v4.8.2',
                         uptime: '14 days',
-                        metrics: [{ timestamp: new Date().toISOString(), cpuUsagePct: 15, ramUsagePct: 35, diskUsagePct: 40, networkLatencyMs: 12, activeThreads: 120 }],
+                        metrics: [],
                         logs: []
                       },
+                      diagnosticResults: [],
+                      similarIncidents: [],
+                      recommendedPlaybooks: [],
                       attachments: attachmentName ? [{
                         id: `att-${Date.now()}`,
                         filename: attachmentName,
-                        filesize: '1.2 MB',
+                        filesize: '1.4 MB',
                         filetype: 'PNG',
                         uploadedBy: currentUser.name,
                         uploadedAt: new Date().toISOString(),
                         url: '#'
                       }] : [],
-                      diagnosticResults: [],
-                      recommendedPlaybooks: [],
                       executionHistory: [],
                       auditTrail: [],
-                      comments: [],
-                      similarIncidents: []
+                      comments: []
                     };
                     setIncidents([newInc, ...incidents]);
+                    setSelectedIncidentId(newInc.id);
+                    setActiveView('incidents');
                   }}
-                  onAddComment={(incidentId, text) => {
+                  onAddComment={(incidentId: string, text: string) => {
                     setIncidents(prev => prev.map(inc => {
                       if (inc.id !== incidentId) return inc;
                       return {
@@ -207,41 +183,91 @@ export function App() {
                 />
               )}
 
-              {/* Incidents Master View */}
-              {activeView === 'incidents' && currentUser.role !== 'EMPLOYEE' && (
-                <IncidentList
-                  incidents={incidents}
-                  selectedIncidentId={selectedIncidentId}
-                  onSelectIncident={(id) => setSelectedIncidentId(id)}
-                  onNewIncidentClick={() => {}}
-                  searchQuery={searchQuery}
+              {/* Incidents Master List & Detail Workstation */}
+              {activeView === 'incidents' && (
+                selectedIncident ? (
+                  <IncidentWorkstation
+                    incident={selectedIncident}
+                    onBack={() => setSelectedIncidentId(null)}
+                    onUpdateStatus={handleUpdateStatus}
+                    onExecutePlaybook={async (action: PlaybookAction, approverName?: string) => {
+                      if (!selectedIncidentId) return;
+                      const log: ActionExecutionResult = {
+                        actionId: action.code,
+                        executedBy: approverName || currentUser.name,
+                        startedAt: new Date().toISOString(),
+                        completedAt: new Date().toISOString(),
+                        success: true,
+                        outputLog: `[EXECUTION OK] ${action.code} executed successfully by ${approverName || currentUser.name}.`,
+                        exitCode: 0
+                      };
+                      setIncidents(prev => prev.map(i => i.id === selectedIncidentId ? {
+                        ...i,
+                        executionHistory: [log, ...i.executionHistory]
+                      } : i));
+                    }}
+                    onReRunDiagnostics={() => {
+                      alert('Re-running diagnostic rule framework...');
+                    }}
+                  />
+                ) : (
+                  <IncidentList
+                    incidents={incidents}
+                    selectedIncidentId={selectedIncidentId}
+                    onSelectIncident={(id) => setSelectedIncidentId(id)}
+                    onNewIncidentClick={() => setActiveView('employee-portal')}
+                    searchQuery={searchQuery}
+                  />
+                )
+              )}
+
+              {/* Diagnostics, Copilot & Similar Incidents inside Workstation */}
+              {(activeView === 'diagnostics' || activeView === 'copilot' || activeView === 'similar') && (
+                <IncidentWorkstation
+                  incident={selectedIncident || incidents[0]}
+                  onBack={() => setActiveView('incidents')}
+                  onUpdateStatus={handleUpdateStatus}
+                  onExecutePlaybook={async (action: PlaybookAction, approverName?: string) => {
+                    const targetId = selectedIncidentId || incidents[0]?.id;
+                    if (!targetId) return;
+                    const log: ActionExecutionResult = {
+                      actionId: action.code,
+                      executedBy: approverName || currentUser.name,
+                      startedAt: new Date().toISOString(),
+                      completedAt: new Date().toISOString(),
+                      success: true,
+                      outputLog: `[EXECUTION OK] ${action.code} executed successfully by ${approverName || currentUser.name}.`,
+                      exitCode: 0
+                    };
+                    setIncidents(prev => prev.map(i => i.id === targetId ? {
+                      ...i,
+                      executionHistory: [log, ...i.executionHistory]
+                    } : i));
+                  }}
+                  onReRunDiagnostics={() => {
+                    alert('Re-running diagnostic rule framework...');
+                  }}
                 />
               )}
 
               {/* Knowledge Base View */}
-              {(activeView === 'knowledge' || activeView === 'similar' || activeView === 'copilot' || activeView === 'diagnostics') && (
+              {(activeView === 'knowledge' || activeView === 'knowledge-base') && (
                 <KnowledgeBase />
               )}
 
-              {activeView === 'knowledge-base' && <KnowledgeBase />}
-              {activeView === 'automations' && <AutomationsView />}
-              {activeView === 'assets' && <AssetsView />}
-
-              {/* Analytics & Dashboard View */}
-              {(activeView === 'analytics' || activeView === 'dashboard') && <AnalyticsView />}
-
               {/* Automations View */}
               {activeView === 'automations' && (
-                <ManagerHub
-                  user={currentUser}
-                  incidents={incidents}
-                  onAssignTechnician={(id, tech) => {
-                    setIncidents(prev => prev.map(i => i.id === id ? { ...i, assignedTechnician: tech } : i));
-                  }}
-                  onEscalateSeverity={(id, sev) => {
-                    setIncidents(prev => prev.map(i => i.id === id ? { ...i, severity: sev } : i));
-                  }}
-                />
+                <AutomationsView />
+              )}
+
+              {/* CMDB Assets View */}
+              {activeView === 'assets' && (
+                <AssetsView />
+              )}
+
+              {/* Analytics & Dashboard View */}
+              {(activeView === 'analytics' || activeView === 'dashboard') && (
+                <AnalyticsView />
               )}
 
               {/* Admin & Users View */}
@@ -265,8 +291,6 @@ export function App() {
                   }}
                 />
               )}
-            </>
-          )}
 
         </main>
       </div>

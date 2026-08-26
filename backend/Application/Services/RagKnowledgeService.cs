@@ -28,7 +28,7 @@ namespace ITIncidentCopilot.Api.Application.Services
         public Task<List<KnowledgeChunk>> ProcessAndChunkDocumentAsync(string filename, string fileType, string fullText, string category, string author)
         {
             var chunks = new List<KnowledgeChunk>();
-            const fontChunkSize = 500;
+            const int fontChunkSize = 500;
             int pageCounter = 1;
 
             for (int i = 0; i < fullText.Length; i += fontChunkSize)

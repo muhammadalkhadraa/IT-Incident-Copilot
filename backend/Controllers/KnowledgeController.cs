@@ -25,11 +25,11 @@ namespace ITIncidentCopilot.Api.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<KBArticle>>> Search([FromQuery] string query)
+        public async Task<ActionResult<IEnumerable<KnowledgeChunk>>> Search([FromQuery] string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
-                return Ok(await _db.KBArticles.ToListAsync());
+                return Ok(await _db.KnowledgeChunks.Include(c => c.Document).ToListAsync());
             }
 
             // Generate 1536d embedding vector via IAiService abstraction
@@ -37,7 +37,8 @@ namespace ITIncidentCopilot.Api.Controllers
             var vector = new Pgvector.Vector(queryEmbedding);
 
             // Execute PostgreSQL pgvector Cosine Distance similarity query via EF Core L2Distance / CosineDistance
-            var results = await _db.KBArticles
+            var results = await _db.KnowledgeChunks
+                .Include(c => c.Document)
                 .OrderBy(a => a.Embedding!.CosineDistance(vector))
                 .Take(5)
                 .ToListAsync();
