@@ -4,14 +4,14 @@ import {
   AlertCircle, 
   SlidersHorizontal, 
   Bot, 
-  BookOpen, 
-  Zap, 
+  // BookOpen, 
+  // Zap, 
   Users, 
   Settings, 
   ShieldCheck,
-  Server,
+  // Server,
   TrendingUp,
-  Layers,
+  // Layers,
   ChevronDown,
   ChevronRight,
   Plus,
@@ -85,6 +85,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px]">{incidentsCount}</span>
             </button>
 
+            {/* Commented out for future work: Knowledge Base */}
+            {/* 
             <button
               onClick={() => onNavigate('knowledge')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold transition-all ${
@@ -94,6 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <BookOpen className="w-4 h-4 text-emerald-400" />
               <span>{t('knowledgeBase')}</span>
             </button>
+            */}
           </div>
         )}
 
@@ -160,7 +163,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>{t('diagnostics')}</span>
             </button>
 
-            {/* Knowledge Base */}
+            {/* Commented out for future work: Knowledge Base, Similar Incidents, Assets/Devices, Automations */}
+            {/* 
             <button
               onClick={() => onNavigate('knowledge')}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
@@ -171,7 +175,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>{t('knowledgeBase')}</span>
             </button>
 
-            {/* Similar Incidents */}
             <button
               onClick={() => onNavigate('similar')}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
@@ -182,7 +185,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>{t('similarIncidents')}</span>
             </button>
 
-            {/* Assets */}
             <button
               onClick={() => onNavigate('assets')}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
@@ -192,6 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Server className="w-4 h-4 text-cyan-400" />
               <span>{t('assetsDevices')}</span>
             </button>
+            */}
 
             {/* Analytics */}
             <button
@@ -204,16 +207,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>{t('analytics')}</span>
             </button>
 
-            {/* Automations */}
+            {/* Commented out for future work: Automations */}
+            {/*
             <button
               onClick={() => onNavigate('automations')}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
-                activeView === 'automations' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                activeView === 'automations' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
               <Zap className="w-4 h-4 text-amber-400" />
               <span>{t('automations')}</span>
             </button>
+            */}
 
             {/* Developer User Control Section */}
             <div className="pt-3 border-t border-slate-800 mt-2 space-y-1">

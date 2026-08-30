@@ -6,12 +6,12 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { IncidentList } from './components/IncidentList';
 import { IncidentWorkstation } from './components/IncidentDetail/IncidentWorkstation';
-import { KnowledgeBase } from './components/KnowledgeBase';
+// import { KnowledgeBase } from './components/KnowledgeBase';
 import { AdminControlCenter } from './components/AdminControlCenter';
 import { EmployeePortal } from './components/EmployeePortal';
-import { AssetsView } from './components/AssetsView';
+// import { AssetsView } from './components/AssetsView';
 import { AnalyticsView } from './components/AnalyticsView';
-import { AutomationsView } from './components/AutomationsView';
+// import { AutomationsView } from './components/AutomationsView';
 import { AuthModal } from './components/AuthModal';
 import { AutomationWebhookEngine } from './services/automationWebhookEngine';
 import { apiService } from './services/apiService';
@@ -429,20 +429,20 @@ export function App() {
                 />
               )}
 
-              {/* Knowledge Base View */}
+              {/* Commented out for future work: Knowledge Base, Automations, CMDB Assets */}
+              {/* 
               {(activeView === 'knowledge' || activeView === 'knowledge-base') && (
                 <KnowledgeBase />
               )}
 
-              {/* Automations View */}
               {activeView === 'automations' && (
                 <AutomationsView />
               )}
 
-              {/* CMDB Assets View */}
               {activeView === 'assets' && (
                 <AssetsView />
               )}
+              */}
 
               {/* Analytics & Dashboard View */}
               {(activeView === 'analytics' || activeView === 'dashboard') && (

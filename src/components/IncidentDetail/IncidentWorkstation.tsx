@@ -6,7 +6,7 @@ import {
   ArrowLeft, 
   Activity, 
   SlidersHorizontal, 
-  BookOpen, 
+  // BookOpen, 
   Terminal, 
   ShieldCheck,
   AlertTriangle,
@@ -50,9 +50,9 @@ export const IncidentWorkstation: React.FC<IncidentWorkstationProps> = ({
     { id: 'telemetry', label: '1. Telemetry & Evidence', icon: Activity },
     { id: 'diagnostics', label: '2. Diagnostic Rules', icon: SlidersHorizontal },
     // { id: 'ai-copilot', label: '3. AI Copilot Diagnosis (Future Feature)', icon: Bot, highlight: true },
-    { id: 'rag-similar', label: '3. Similar Incidents (RAG)', icon: BookOpen },
-    { id: 'action-runner', label: '4. Action & Approval', icon: Terminal },
-    { id: 'audit-trail', label: '5. Compliance Audit', icon: ShieldCheck },
+    // { id: 'rag-similar', label: '3. Similar Incidents (RAG) (Future Feature)', icon: BookOpen },
+    { id: 'action-runner', label: '3. Action & Approval', icon: Terminal },
+    { id: 'audit-trail', label: '4. Compliance Audit', icon: ShieldCheck },
   ];
 
   const handleStatusSelect = (targetStatus: IncidentStatus) => {
