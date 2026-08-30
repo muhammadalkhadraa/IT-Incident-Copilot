@@ -21,3 +21,5 @@ telemetry_offline_buffer.json
 # Environment Secrets
 .env
 .env.local
+
+.vercel
