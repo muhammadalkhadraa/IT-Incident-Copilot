@@ -124,6 +124,16 @@ export const IncidentWorkstation: React.FC<IncidentWorkstationProps> = ({
 
           {/* State Machine Status Switcher Controls */}
           <div className="flex items-center gap-3 shrink-0">
+            {incident.status === 'NEW' && (
+              <button
+                onClick={() => handleStatusSelect('DIAGNOSING')}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-glow-emerald transition-all shrink-0 font-mono"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Accept Ticket into Queue</span>
+              </button>
+            )}
+
             <span className="text-xs text-slate-400 font-mono">State Machine:</span>
             
             {incident.status === 'CLOSED' ? (

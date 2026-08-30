@@ -12,6 +12,7 @@ import {
 
 import { apiService } from '../services/apiService';
 import { useLanguage } from '../context/LanguageContext';
+import { MOCK_USERS } from '../data/mockUsers';
 
 interface EmployeePortalProps {
   user: UserProfile;
@@ -23,7 +24,8 @@ interface EmployeePortalProps {
     attachmentName?: string,
     hostname?: string,
     ipAddress?: string,
-    macAddress?: string
+    macAddress?: string,
+    assignedTechnician?: string
   ) => void;
   onAddComment: (incidentId: string, commentText: string) => void;
 }
@@ -48,9 +50,30 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
   const [newTicketTitle, setNewTicketTitle] = useState('');
   const [newTicketCategory, setNewTicketCategory] = useState('Hardware & Monitors');
   const [newTicketDesc, setNewTicketDesc] = useState('');
+  const [assignedTechnician, setAssignedTechnician] = useState('Alex Thorne');
+  const [developerUsers, setDeveloperUsers] = useState<UserProfile[]>([]);
   const [attachmentFileName, setAttachmentFileName] = useState('');
   const [commentInput, setCommentInput] = useState('');
   const [showNewForm, setShowNewForm] = useState(false);
+
+  // Load registered developer users
+  React.useEffect(() => {
+    async function loadDevelopers() {
+      try {
+        const allUsers = await apiService.fetchUsers();
+        const devs = allUsers.filter(u => u.role === 'TECHNICIAN' || u.role === 'IT_MANAGER' || u.role === 'ADMINISTRATOR');
+        if (devs.length > 0) {
+          setDeveloperUsers(devs);
+          setAssignedTechnician(devs[0].name);
+          return;
+        }
+      } catch {}
+      const fallbackDevs = MOCK_USERS.filter(u => u.role === 'TECHNICIAN' || u.role === 'IT_MANAGER' || u.role === 'ADMINISTRATOR');
+      setDeveloperUsers(fallbackDevs);
+      if (fallbackDevs.length > 0) setAssignedTechnician(fallbackDevs[0].name);
+    }
+    loadDevelopers();
+  }, []);
 
   // Real Device Network Telemetry State
   const [deviceHostname, setDeviceHostname] = useState('Extracting PC Data...');
@@ -120,7 +143,8 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
       attachmentFileName,
       deviceHostname,
       deviceIpAddress,
-      deviceMacAddress
+      deviceMacAddress,
+      assignedTechnician
     );
 
     setNewTicketTitle('');
@@ -358,6 +382,24 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                 <option value="Network & VPN">Network & VPN Access</option>
                 <option value="Printer Services">Printer Services</option>
                 <option value="Account & SSO">Account & SSO Access</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono text-cyan-400 mb-1 font-bold flex items-center justify-between">
+                <span>Assign Task to Developer / Technician</span>
+                <span className="text-[10px] text-slate-400 font-normal">Select Assigned Developer</span>
+              </label>
+              <select
+                value={assignedTechnician}
+                onChange={(e) => setAssignedTechnician(e.target.value)}
+                className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-cyan-500/50 text-cyan-300 font-mono font-bold bg-slate-900 focus:border-cyan-400 shadow-glow-cyan"
+              >
+                {developerUsers.map(dev => (
+                  <option key={dev.id} value={dev.name}>
+                    👨‍💻 {dev.name} ({dev.title || 'IT Developer'} - {dev.department || 'Service Desk'})
+                  </option>
+                ))}
               </select>
             </div>
 

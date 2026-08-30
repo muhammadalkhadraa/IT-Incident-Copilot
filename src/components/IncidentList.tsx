@@ -19,6 +19,7 @@ interface IncidentListProps {
   onSelectIncident: (id: string) => void;
   onNewIncidentClick: () => void;
   searchQuery: string;
+  onAcceptTicket?: (incidentId: string) => void;
 }
 
 export const IncidentList: React.FC<IncidentListProps> = ({
@@ -26,7 +27,8 @@ export const IncidentList: React.FC<IncidentListProps> = ({
   selectedIncidentId,
   onSelectIncident,
   onNewIncidentClick,
-  searchQuery
+  searchQuery,
+  onAcceptTicket
 }) => {
   const { t } = useLanguage();
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
@@ -256,6 +258,19 @@ export const IncidentList: React.FC<IncidentListProps> = ({
                       {confidence ? `${confidence}%` : 'N/A'}
                     </td>
                     <td className="p-3 text-right whitespace-nowrap">
+                      {incident.status === 'NEW' && onAcceptTicket && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAcceptTicket(incident.id);
+                          }}
+                          className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-all inline-flex items-center gap-1 shadow-glow-emerald mr-1.5 font-mono"
+                          title="Accept ticket into queue and begin diagnosis"
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Accept Ticket</span>
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

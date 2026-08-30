@@ -257,7 +257,7 @@ export function App() {
                 <EmployeePortal
                   user={currentUser}
                   incidents={incidents}
-                  onReportIncident={async (title: string, category: string, description: string, attachmentName?: string, hostname?: string, ipAddress?: string, macAddress?: string) => {
+                  onReportIncident={async (title: string, category: string, description: string, attachmentName?: string, hostname?: string, ipAddress?: string, macAddress?: string, assignedTech?: string) => {
                     try {
                       const persistedInc = await apiService.createIncident({
                         title,
@@ -269,6 +269,9 @@ export function App() {
                         macAddress: macAddress || '00:1A:2B:7C:8D:9E',
                         severity: 'MEDIUM'
                       });
+                      if (assignedTech) {
+                        persistedInc.assignedTechnician = assignedTech;
+                      }
                       if (attachmentName) {
                         persistedInc.attachments = [{
                           id: `att-${Date.now()}`,
@@ -285,9 +288,10 @@ export function App() {
                       setActiveView('incidents');
                     } catch (err) {
                       console.error('Failed to save ticket to backend database, creating local ticket:', err);
+                      const nextSeq = String(incidents.length + 1).padStart(4, '0');
                       const newInc: Incident = {
                         id: `inc-${Date.now()}`,
-                        ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+                        ticketNumber: `INC-2026-${nextSeq}`,
                         title,
                         description,
                         category,
@@ -296,6 +300,7 @@ export function App() {
                         affectedService: category,
                         reporter: currentUser.name,
                         reporterId: currentUser.id,
+                        assignedTechnician: assignedTech || 'Alex Thorne',
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                         slaDueDate: new Date(Date.now() + 86400000).toISOString(),
@@ -390,6 +395,7 @@ export function App() {
                     onSelectIncident={(id) => setSelectedIncidentId(id)}
                     onNewIncidentClick={() => setActiveView('employee-portal')}
                     searchQuery={searchQuery}
+                    onAcceptTicket={(id) => handleUpdateStatus(id, 'DIAGNOSING')}
                   />
                 )
               )}
