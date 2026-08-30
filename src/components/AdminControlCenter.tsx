@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { UserProfile, UserRole, AuditLogEntry } from '../types';
 import { 
   ShieldCheck, 
@@ -19,6 +19,7 @@ interface AdminControlCenterProps {
   users: UserProfile[];
   onUpdateUserRole: (userId: string, newRole: UserRole) => void;
   onAddUser: (name: string, email: string, role: UserRole, department: string, title: string) => void;
+  initialTab?: 'users' | 'settings' | 'audit';
 }
 
 export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
@@ -26,10 +27,17 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
   auditTrail,
   users,
   onUpdateUserRole,
-  onAddUser
+  onAddUser,
+  initialTab = 'users'
 }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'users' | 'settings' | 'audit'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'settings' | 'audit'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const [newName, setNewName] = useState('');

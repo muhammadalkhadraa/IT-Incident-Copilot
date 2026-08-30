@@ -447,6 +447,7 @@ export function App() {
               {(activeView === 'users' || activeView === 'settings' || activeView === 'audit') && (
                 <AdminControlCenter
                   currentUser={currentUser}
+                  initialTab={activeView === 'settings' ? 'settings' : activeView === 'audit' ? 'audit' : 'users'}
                   auditTrail={[]}
                   users={users}
                   onUpdateUserRole={handleUpdateUserRole}
