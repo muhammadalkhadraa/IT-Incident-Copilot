@@ -42,8 +42,8 @@ export const AICopilotPanel: React.FC<AICopilotPanelProps> = ({ incident }) => {
     setChatMessages(prev => [...prev, { sender: 'USER', text: userText, timestamp }]);
     setInputQuery('');
 
-    setTimeout(() => {
-      const response = AICopilotService.answerQuestion(incident, userText);
+    setTimeout(async () => {
+      const response = await AICopilotService.answerQuestion(incident, userText);
       setChatMessages(prev => [...prev, { sender: 'COPILOT', text: response, timestamp: new Date().toLocaleTimeString() }]);
     }, 400);
   };

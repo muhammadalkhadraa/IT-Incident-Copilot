@@ -160,7 +160,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Diagnostics</span>
             </button>
 
-            {/* AI Copilot */}
+            {/* AI Copilot (Commented out for future release)
             <button
               onClick={() => onNavigate('copilot')}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
@@ -170,6 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Bot className="w-4 h-4 text-purple-400" />
               <span>AI Copilot</span>
             </button>
+            */}
 
             {/* Knowledge Base */}
             <button

@@ -6,7 +6,6 @@ import {
   ArrowLeft, 
   Activity, 
   SlidersHorizontal, 
-  Bot, 
   BookOpen, 
   Terminal, 
   ShieldCheck,
@@ -19,7 +18,7 @@ import {
 } from 'lucide-react';
 import { TelemetryPanel } from './TelemetryPanel';
 import { DiagnosticRulesPanel } from './DiagnosticRulesPanel';
-import { AICopilotPanel } from './AICopilotPanel';
+// import { AICopilotPanel } from './AICopilotPanel'; (Reserved for future work)
 import { SimilarIncidentsPanel } from './SimilarIncidentsPanel';
 import { ActionApprovalTerminal } from './ActionApprovalTerminal';
 import { AuditTrailPanel } from './AuditTrailPanel';
@@ -39,7 +38,7 @@ export const IncidentWorkstation: React.FC<IncidentWorkstationProps> = ({
   onExecutePlaybook,
   onReRunDiagnostics
 }) => {
-  const [activeStep, setActiveStep] = useState<string>('ai-copilot');
+  const [activeStep, setActiveStep] = useState<string>('diagnostics');
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [reopenReason, setReopenReason] = useState('');
   const [transitionError, setTransitionError] = useState<string | null>(null);
@@ -50,10 +49,10 @@ export const IncidentWorkstation: React.FC<IncidentWorkstationProps> = ({
   const steps = [
     { id: 'telemetry', label: '1. Telemetry & Evidence', icon: Activity },
     { id: 'diagnostics', label: '2. Diagnostic Rules', icon: SlidersHorizontal },
-    { id: 'ai-copilot', label: '3. AI Copilot Diagnosis', icon: Bot, highlight: true },
-    { id: 'rag-similar', label: '4. Similar Incidents (RAG)', icon: BookOpen },
-    { id: 'action-runner', label: '5. Action & Approval', icon: Terminal },
-    { id: 'audit-trail', label: '6. Compliance Audit', icon: ShieldCheck },
+    // { id: 'ai-copilot', label: '3. AI Copilot Diagnosis (Future Feature)', icon: Bot, highlight: true },
+    { id: 'rag-similar', label: '3. Similar Incidents (RAG)', icon: BookOpen },
+    { id: 'action-runner', label: '4. Action & Approval', icon: Terminal },
+    { id: 'audit-trail', label: '5. Compliance Audit', icon: ShieldCheck },
   ];
 
   const handleStatusSelect = (targetStatus: IncidentStatus) => {
@@ -200,8 +199,6 @@ export const IncidentWorkstation: React.FC<IncidentWorkstationProps> = ({
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 isActive 
                   ? 'bg-gradient-to-r from-cyan-500 to-sky-600 text-white shadow-glow-cyan' 
-                  : step.highlight 
-                  ? 'text-cyan-400 hover:bg-cyan-950/40 border border-cyan-800/40' 
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
               }`}
             >
@@ -222,7 +219,7 @@ export const IncidentWorkstation: React.FC<IncidentWorkstationProps> = ({
             onReRunDiagnostics={onReRunDiagnostics} 
           />
         )}
-        {activeStep === 'ai-copilot' && <AICopilotPanel incident={incident} />}
+        {/* {activeStep === 'ai-copilot' && <AICopilotPanel incident={incident} />} */}
         {activeStep === 'rag-similar' && <SimilarIncidentsPanel incident={incident} />}
         {activeStep === 'action-runner' && (
           <ActionApprovalTerminal 
