@@ -248,7 +248,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = 'ltr';
     document.documentElement.lang = language;
   }, [language]);
 
@@ -256,7 +256,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return translations[language][key] || translations['en'][key] || key;
   };
 
-  const isRtl = language === 'ar';
+  const isRtl = false;
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t, isRtl }}>
