@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 import { apiService } from '../services/apiService';
+import { useLanguage } from '../context/LanguageContext';
 
 interface EmployeePortalProps {
   user: UserProfile;
@@ -33,6 +34,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
   onReportIncident,
   onAddComment
 }) => {
+  const { t } = useLanguage();
   // Filter tickets strictly created by or belonging to this specific user
   const myIncidents = incidents.filter(i => {
     if (!i.reporter) return false;
@@ -144,7 +146,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
           <div className="flex items-center gap-2">
             <LifeBuoy className="w-6 h-6 text-cyan-400" />
             <h2 className="text-lg font-extrabold text-slate-100 font-mono">
-              EMPLOYEE SELF-SERVICE IT PORTAL
+              {t('employeePortalBanner')}
             </h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
@@ -157,7 +159,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 text-white font-bold text-xs shadow-glow-cyan hover:opacity-90 transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>Report New IT Issue</span>
+          <span>{t('reportNewIssue')}</span>
         </button>
       </div>
 

@@ -7,10 +7,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   LogIn,
-  LogOut
+  LogOut,
+  Languages
 } from 'lucide-react';
 import type { Incident, UserProfile, UserRole } from '../types';
 import { MOCK_USERS } from '../data/mockUsers';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HeaderProps {
   currentUser: UserProfile;
@@ -44,6 +46,8 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const { language, toggleLanguage, t } = useLanguage();
+
   return (
     <header className="sticky top-0 z-40 bg-[#080b11]/90 backdrop-blur-md border-b border-slate-800/80 px-6 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
@@ -57,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-lg tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-purple-400">
-                IT INCIDENT COPILOT
+                {t('appTitle')}
               </h1>
               <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/50">
                 v1.0 enterprise
@@ -86,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Quick Search, Notifications, Auth Modal & Persona Role Switcher */}
+        {/* Right: Quick Search, Language Switcher, Notifications, Auth Modal & Persona Role Switcher */}
         <div className="flex items-center gap-3">
           
           {/* Quick Search */}
@@ -111,6 +115,16 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{pendingApprovalsCount} Approvals Needed</span>
             </button>
           )}
+
+          {/* Language Toggle Button (English ↔ Arabic) */}
+          <button
+            onClick={toggleLanguage}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-bold transition-all shrink-0 font-mono shadow-glow-purple"
+            title={language === 'en' ? 'Switch to Arabic (العربية)' : 'Switch to English'}
+          >
+            <Languages className="w-4 h-4 text-purple-400" />
+            <span>{language === 'en' ? 'العربية' : 'EN'}</span>
+          </button>
 
           {/* Sign In / Register Modal Opener Button */}
           {onOpenAuthModal && (

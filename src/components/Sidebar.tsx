@@ -18,6 +18,7 @@ import {
   Send
 } from 'lucide-react';
 import type { UserRole } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 interface SidebarProps {
   currentRole: UserRole;
@@ -33,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   incidentsCount
 }) => {
   const [incidentsOpen, setIncidentsOpen] = useState(true);
+  const { t } = useLanguage();
 
   const isDeveloperOrAdmin = currentRole === 'TECHNICIAN' || currentRole === 'IT_MANAGER' || currentRole === 'ADMINISTRATOR';
 
@@ -45,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Bot className="w-5 h-5 text-slate-950" />
         </div>
         <div>
-          <div className="font-extrabold text-sm text-slate-100 font-sans tracking-wide">IT COPILOT</div>
+          <div className="font-extrabold text-sm text-slate-100 font-sans tracking-wide">{t('appTitle')}</div>
           <div className="text-[10px] text-cyan-400 font-mono">
             {isDeveloperOrAdmin ? 'Developer Console' : 'User Portal'}
           </div>
