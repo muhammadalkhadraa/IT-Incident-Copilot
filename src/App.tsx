@@ -450,10 +450,10 @@ export function App() {
               )}
 
               {/* Admin & Users View (Developer User Control Section) */}
-              {(activeView === 'users' || activeView === 'settings' || activeView === 'audit') && (
+              {activeView === 'users' && (
                 <AdminControlCenter
                   currentUser={currentUser}
-                  initialTab={activeView === 'settings' ? 'settings' : activeView === 'audit' ? 'audit' : 'users'}
+                  initialTab="users"
                   auditTrail={[]}
                   users={users}
                   onUpdateUserRole={handleUpdateUserRole}

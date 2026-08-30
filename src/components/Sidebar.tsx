@@ -7,8 +7,8 @@ import {
   // BookOpen, 
   // Zap, 
   Users, 
-  Settings, 
-  ShieldCheck,
+  // Settings, 
+  // ShieldCheck,
   // Server,
   TrendingUp,
   // Layers,
@@ -226,13 +226,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => onNavigate('users')}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
-                  activeView === 'users' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'text-slate-400 hover:text-rose-200 hover:bg-slate-800/60'
+                  activeView === 'users' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'text-slate-400 hover:text-rose-200 hover:bg-slate-800/60'
                 }`}
               >
                 <Users className="w-4 h-4 text-rose-400" />
                 <span>{t('userControl')}</span>
               </button>
 
+              {/* Commented out for future work: System Settings & Audit Logs */}
+              {/*
               <button
                 onClick={() => onNavigate('settings')}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
@@ -252,6 +254,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
                 <span>{t('auditLogs')}</span>
               </button>
+              */}
             </div>
           </div>
         )}

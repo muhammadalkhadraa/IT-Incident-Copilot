@@ -52,7 +52,7 @@ export const IncidentWorkstation: React.FC<IncidentWorkstationProps> = ({
     // { id: 'ai-copilot', label: '3. AI Copilot Diagnosis (Future Feature)', icon: Bot, highlight: true },
     // { id: 'rag-similar', label: '3. Similar Incidents (RAG) (Future Feature)', icon: BookOpen },
     { id: 'action-runner', label: '3. Action & Approval', icon: Terminal },
-    { id: 'audit-trail', label: '4. Compliance Audit', icon: ShieldCheck },
+    // { id: 'audit-trail', label: '4. Compliance Audit (Future Feature)', icon: ShieldCheck },
   ];
 
   const handleStatusSelect = (targetStatus: IncidentStatus) => {

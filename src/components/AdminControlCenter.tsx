@@ -4,10 +4,10 @@ import {
   ShieldCheck, 
   Users, 
   UserPlus, 
-  Settings, 
+  // Settings, 
   Key, 
   Database, 
-  FileLock, 
+  // FileLock, 
   CheckCircle2
 } from 'lucide-react';
 
@@ -92,6 +92,9 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
         >
           <Users className="w-4 h-4" /> {t('userControl')} ({users.length})
         </button>
+
+        {/* Commented out for future work: System Settings & Audit Logs tabs */}
+        {/*
         <button
           onClick={() => setActiveTab('settings')}
           className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
@@ -108,6 +111,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
         >
           <FileLock className="w-4 h-4" /> {t('auditLogs')} ({auditTrail.length})
         </button>
+        */}
       </div>
 
       {/* User Directory Tab */}
