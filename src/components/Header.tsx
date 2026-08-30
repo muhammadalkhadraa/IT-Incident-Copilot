@@ -1,10 +1,10 @@
 import React from 'react';
 import { 
   Bot, 
-  Activity, 
+  // Activity, 
   Search, 
-  Cpu, 
-  CheckCircle2,
+  // Cpu, 
+  // CheckCircle2,
   AlertTriangle,
   LogIn,
   LogOut,
@@ -59,34 +59,9 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#080b11] rounded-full pulse-active" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-extrabold text-lg tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-purple-400">
-                {t('appTitle')}
-              </h1>
-              <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/50">
-                v1.0 enterprise
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 flex items-center gap-2 font-mono">
-              <span>RBAC ACTIVE</span>
-              <span>•</span>
-              <span className="text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 inline" /> Persona: {currentUser.role}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Center: Live Telemetry Ticker */}
-        <div className="hidden md:flex items-center gap-6 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 font-mono">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span>Ingestion: <strong className="text-white">1.2k events/s</strong></span>
-          </div>
-          <div className="h-3 w-[1px] bg-slate-800" />
-          <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-purple-400" />
-            <span>Monitored Hosts: <strong className="text-white">412 Hosts</strong></span>
+            <h1 className="font-extrabold text-lg tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-purple-400">
+              {t('appTitle')}
+            </h1>
           </div>
         </div>
 
