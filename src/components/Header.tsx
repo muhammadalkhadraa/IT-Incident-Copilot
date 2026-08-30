@@ -6,12 +6,12 @@ import {
   // Cpu, 
   // CheckCircle2,
   AlertTriangle,
-  LogIn,
+  // LogIn,
   LogOut,
   Languages
 } from 'lucide-react';
 import type { Incident, UserProfile, UserRole } from '../types';
-import { MOCK_USERS } from '../data/mockUsers';
+// import { MOCK_USERS } from '../data/mockUsers';
 import { useLanguage } from '../context/LanguageContext';
 
 interface HeaderProps {
@@ -27,11 +27,9 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ 
   currentUser,
-  onSwitchUser,
   incidents, 
   onSearchChange,
   onTabChange,
-  onOpenAuthModal,
   onLogout
 }) => {
   const pendingApprovalsCount = incidents.filter(i => i.status === 'AWAITING_APPROVAL').length;
@@ -101,17 +99,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{language === 'en' ? 'العربية' : 'EN'}</span>
           </button>
 
-          {/* Sign In / Register Modal Opener Button */}
-          {onOpenAuthModal && (
-            <button
-              onClick={onOpenAuthModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all shrink-0 font-mono"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Switch Account</span>
-            </button>
-          )}
-
           {/* Log Out Button */}
           {onLogout && (
             <button
@@ -124,27 +111,17 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Interactive Role Switcher Selector */}
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+          {/* User Profile Badge */}
+          <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
             <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-cyan-400 shrink-0">
               {currentUser.avatar}
             </div>
 
             <div className="flex flex-col text-left">
-              <div className="text-xs font-semibold text-slate-200">{currentUser.name}</div>
-              
-              <select
-                value={currentUser.id}
-                onChange={(e) => {
-                  const targetUser = MOCK_USERS.find(u => u.id === e.target.value);
-                  if (targetUser) onSwitchUser(targetUser);
-                }}
-                className={`text-[10px] px-1.5 py-0.5 rounded border font-mono font-bold cursor-pointer bg-slate-900 ${getRoleBadgeColor(currentUser.role)}`}
-              >
-                {MOCK_USERS.map(u => (
-                  <option key={u.id} value={u.id}>Switch to {u.role}: {u.name}</option>
-                ))}
-              </select>
+              <div className="text-xs font-bold text-slate-200">{currentUser.name}</div>
+              <span className={`text-[9px] px-1.5 py-0.2 rounded border font-mono font-bold inline-block w-fit ${getRoleBadgeColor(currentUser.role)}`}>
+                {currentUser.role}
+              </span>
             </div>
           </div>
 
