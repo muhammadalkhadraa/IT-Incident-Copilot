@@ -59,6 +59,7 @@ export interface DeviceTelemetry {
   hostname: string;
   os: string;
   ipAddress: string;
+  macAddress?: string;
   lastHeartbeat: string;
   agentVersion: string;
   uptime: string;

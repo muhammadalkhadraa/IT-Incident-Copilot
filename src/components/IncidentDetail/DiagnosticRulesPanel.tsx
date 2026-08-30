@@ -19,14 +19,25 @@ export const DiagnosticRulesPanel: React.FC<DiagnosticRulesPanelProps> = ({
   const [showJsonEvidence, setShowJsonEvidence] = useState(false);
   const [showRuleTraces, setShowRuleTraces] = useState(true);
 
-  const passCount = results.filter(r => r.status === 'PASS').length;
-  const failCount = results.filter(r => r.status === 'FAIL').length;
-  const warnCount = results.filter(r => r.status === 'WARN').length;
-
   // Run Stage 1 empirical tests & independent decision tree rule engine
   const stage1Payload = incident ? DiagnosticEngine.runStage1EvidenceCollection(incident) : null;
   const structuredEvidence = incident ? DiagnosticTestRunner.runAllTests(incident) : [];
   const decisionTreeResults = incident ? IndependentRuleEngine.evaluateDecisionTree(incident) : [];
+
+  // Calculate pass/fail/warning counts directly from visible decision tree rules & empirical tests
+  const visibleRuleStatuses = decisionTreeResults.length > 0
+    ? decisionTreeResults.map(r => ({ status: r.status === 'TRIGGERED' ? 'FAIL' : 'PASS' }))
+    : results.map(r => ({ status: r.status }));
+
+  const empiricalTests = stage1Payload ? stage1Payload.tests : [];
+  const allVisibleChecks = [
+    ...empiricalTests.map(t => ({ status: t.status })),
+    ...visibleRuleStatuses
+  ];
+
+  const passCount = allVisibleChecks.filter(r => r.status === 'PASS').length;
+  const failCount = allVisibleChecks.filter(r => r.status === 'FAIL').length;
+  const warnCount = allVisibleChecks.filter(r => r.status === 'WARN').length;
 
   return (
     <div className="space-y-6">

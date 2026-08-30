@@ -5,7 +5,9 @@ import {
   Search, 
   Cpu, 
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 import type { Incident, UserProfile, UserRole } from '../types';
 import { MOCK_USERS } from '../data/mockUsers';
@@ -17,6 +19,8 @@ interface HeaderProps {
   onSearchChange: (query: string) => void;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onOpenAuthModal?: () => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -24,7 +28,9 @@ export const Header: React.FC<HeaderProps> = ({
   onSwitchUser,
   incidents, 
   onSearchChange,
-  onTabChange 
+  onTabChange,
+  onOpenAuthModal,
+  onLogout
 }) => {
   const pendingApprovalsCount = incidents.filter(i => i.status === 'AWAITING_APPROVAL').length;
   const criticalCount = incidents.filter(i => i.severity === 'CRITICAL' && i.status !== 'RESOLVED').length;
@@ -80,15 +86,15 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Quick Search, Notifications, Persona Role Switcher */}
+        {/* Right: Quick Search, Notifications, Auth Modal & Persona Role Switcher */}
         <div className="flex items-center gap-3">
           
           {/* Quick Search */}
-          <div className="relative hidden sm:block w-40 lg:w-56">
+          <div className="relative hidden sm:block w-36 lg:w-48">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text"
-              placeholder="Search incidents..."
+              placeholder="Search tickets..."
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full glass-input text-xs pl-9 pr-3 py-1.5 rounded-lg border-slate-700/80 placeholder:text-slate-500"
             />
@@ -106,6 +112,29 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
+          {/* Sign In / Register Modal Opener Button */}
+          {onOpenAuthModal && (
+            <button
+              onClick={onOpenAuthModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all shrink-0 font-mono"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Switch Account</span>
+            </button>
+          )}
+
+          {/* Log Out Button */}
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold transition-all shrink-0 font-mono"
+              title="Sign out of your account"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
+          )}
+
           {/* Interactive Role Switcher Selector */}
           <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
             <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-cyan-400 shrink-0">
@@ -115,7 +144,6 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex flex-col text-left">
               <div className="text-xs font-semibold text-slate-200">{currentUser.name}</div>
               
-              {/* Persona Switcher Select */}
               <select
                 value={currentUser.id}
                 onChange={(e) => {

@@ -131,12 +131,12 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
                   <select
                     value={usr.role}
                     onChange={(e) => onUpdateUserRole(usr.id, e.target.value as UserRole)}
-                    className="glass-input text-xs px-3 py-1.5 rounded-xl border-slate-700 font-bold text-rose-300 bg-slate-900"
+                    className="glass-input text-xs px-3 py-1.5 rounded-xl border-slate-700 font-bold text-rose-300 bg-slate-900 font-mono"
                   >
-                    <option value="EMPLOYEE">EMPLOYEE</option>
-                    <option value="TECHNICIAN">TECHNICIAN</option>
-                    <option value="IT_MANAGER">IT_MANAGER</option>
-                    <option value="ADMINISTRATOR">ADMINISTRATOR</option>
+                    <option value="EMPLOYEE">Standard User (Ticket Submissions Only)</option>
+                    <option value="TECHNICIAN">Developer / Technician (Full Console Access)</option>
+                    <option value="IT_MANAGER">IT Manager</option>
+                    <option value="ADMINISTRATOR">Administrator</option>
                   </select>
                 </div>
 

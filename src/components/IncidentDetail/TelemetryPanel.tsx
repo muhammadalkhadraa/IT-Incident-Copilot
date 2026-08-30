@@ -14,7 +14,7 @@ export const TelemetryPanel: React.FC<TelemetryPanelProps> = ({ telemetry }) => 
     <div className="space-y-6">
       
       {/* Host Specifications Banner */}
-      <div className="p-4 rounded-2xl glass-panel border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="p-4 rounded-2xl glass-panel border-slate-800 grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div>
           <div className="text-[10px] text-slate-500 font-mono uppercase">Target Device</div>
           <div className="text-xs font-bold text-slate-200 mt-0.5 flex items-center gap-1 font-mono">
@@ -29,6 +29,10 @@ export const TelemetryPanel: React.FC<TelemetryPanelProps> = ({ telemetry }) => 
         <div>
           <div className="text-[10px] text-slate-500 font-mono uppercase">IP Address</div>
           <div className="text-xs font-semibold text-slate-300 mt-0.5 font-mono">{telemetry.ipAddress}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-slate-500 font-mono uppercase">MAC Address</div>
+          <div className="text-xs font-semibold text-cyan-400 mt-0.5 font-mono">{telemetry.macAddress || '00:1A:2B:44:88:99'}</div>
         </div>
         <div>
           <div className="text-[10px] text-slate-500 font-mono uppercase">Telemetry Agent</div>

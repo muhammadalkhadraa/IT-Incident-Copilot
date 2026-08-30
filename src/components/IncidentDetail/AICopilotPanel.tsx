@@ -84,17 +84,17 @@ export const AICopilotPanel: React.FC<AICopilotPanelProps> = ({ incident }) => {
 
         <div className="border-r border-slate-800 pr-2">
           <div className="text-[10px] text-slate-500 flex items-center gap-1"><Layers2 className="w-3 h-3 text-purple-400" /> SUBCATEGORY</div>
-          <div className="font-bold text-purple-300 mt-0.5">Print Spooler Subsystem</div>
+          <div className="font-bold text-purple-300 mt-0.5">{primaryHypothesis.rootCauseCategory}</div>
         </div>
 
         <div className="border-r border-slate-800 pr-2">
           <div className="text-[10px] text-slate-500 flex items-center gap-1"><ShieldAlert className="w-3 h-3 text-amber-400" /> RECOMMENDED PRIORITY</div>
-          <div className="font-bold text-amber-400 mt-0.5">P1 - CRITICAL (96% Conf)</div>
+          <div className="font-bold text-amber-400 mt-0.5">P2 - {incident.severity} ({primaryHypothesis.confidenceScore}% Conf)</div>
         </div>
 
         <div>
           <div className="text-[10px] text-slate-500 flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-400" /> CLASSIFICATION REASON</div>
-          <div className="text-[11px] text-slate-300 truncate mt-0.5">Executive print queue buffer deadlock</div>
+          <div className="text-[11px] text-slate-300 truncate mt-0.5">{primaryHypothesis.title}</div>
         </div>
       </div>
 

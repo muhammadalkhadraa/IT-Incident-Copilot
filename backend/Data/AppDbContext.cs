@@ -31,14 +31,11 @@ namespace ITIncidentCopilot.Api.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Enable PostgreSQL pgvector extension
-            modelBuilder.HasPostgresExtension("vector");
-
             // KnowledgeChunk Vector Embedding configuration (1536 dimensions)
             modelBuilder.Entity<KnowledgeChunk>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Embedding).HasColumnType("vector(1536)");
+                entity.Ignore(e => e.Embedding);
                 entity.HasOne(e => e.Document)
                       .WithMany(d => d.Chunks)
                       .HasForeignKey(e => e.DocumentId)

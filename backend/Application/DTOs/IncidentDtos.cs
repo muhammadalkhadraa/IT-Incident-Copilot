@@ -9,6 +9,8 @@ namespace ITIncidentCopilot.Api.Application.DTOs
         public string Description { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public string Hostname { get; set; } = string.Empty;
+        public string IpAddress { get; set; } = string.Empty;
+        public string MacAddress { get; set; } = string.Empty;
         public string Severity { get; set; } = "MEDIUM";
         public string Reporter { get; set; } = string.Empty;
     }
@@ -28,6 +30,8 @@ namespace ITIncidentCopilot.Api.Application.DTOs
         public string Status { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public string Hostname { get; set; } = string.Empty;
+        public string IpAddress { get; set; } = string.Empty;
+        public string MacAddress { get; set; } = string.Empty;
         public string Reporter { get; set; } = string.Empty;
         public string AssignedTechnician { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }

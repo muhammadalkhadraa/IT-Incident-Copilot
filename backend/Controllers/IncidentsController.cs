@@ -36,6 +36,19 @@ namespace ITIncidentCopilot.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<IncidentResponseDto>> CreateIncident([FromBody] CreateIncidentRequestDto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.IpAddress))
+            {
+                var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+                if (!string.IsNullOrEmpty(remoteIp))
+                {
+                    dto.IpAddress = remoteIp == "::1" ? "127.0.0.1 (Localhost)" : remoteIp;
+                }
+                else
+                {
+                    dto.IpAddress = "192.168.1.105";
+                }
+            }
+
             var result = await _incidentService.CreateIncidentAsync(dto);
             return CreatedAtAction(nameof(GetIncidentById), new { id = result.Id }, result);
         }

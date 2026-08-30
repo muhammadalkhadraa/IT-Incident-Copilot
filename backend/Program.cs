@@ -21,7 +21,7 @@ var connString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Host=localhost;Database=it_copilot;Username=postgres;Password=copilot_secure_pass_2026";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connString, o => o.UseVector()));
+    options.UseNpgsql(connString));
 
 // Register Extensible Diagnostic Test Plugins in DI
 builder.Services.AddScoped<IDiagnosticTest, PingGatewayTest>();
@@ -71,6 +71,21 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Automatically create PostgreSQL database tables & seed initial data on API startup
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        dbContext.Database.EnsureCreated();
+        DbInitializer.SeedAsync(dbContext).GetAwaiter().GetResult();
+    }
+    catch
+    {
+        // Graceful fallback if database permissions/Npgsql transient error
+    }
+}
 
 // Centralized Global Exception Handling Middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();

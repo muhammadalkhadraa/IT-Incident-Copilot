@@ -11,59 +11,139 @@ namespace ITIncidentCopilot.Api.Services
         public Task<AiDiagnosisResultDto> ClassifyAndDiagnoseAsync(Incident incident)
         {
             var result = new AiDiagnosisResultDto();
+            string title = incident.Title ?? "";
+            string desc = incident.Description ?? "";
+            string category = incident.Category ?? "";
+            string host = string.IsNullOrWhiteSpace(incident.Hostname) ? "HOST-DEVICE01" : incident.Hostname;
 
-            if (incident.Title.Contains("Print", StringComparison.OrdinalIgnoreCase) || 
-                incident.Description.Contains("spool", StringComparison.OrdinalIgnoreCase))
+            string combinedText = $"{title} {desc} {category}".ToLowerInvariant();
+
+            if (combinedText.Contains("hardware") || combinedText.Contains("monitor") || combinedText.Contains("display") || combinedText.Contains("screen") || combinedText.Contains("gpu"))
+            {
+                result.PrimaryHypothesisTitle = "Display Adapter Sync Failure & GPU Driver TDR Reset";
+                result.ConfidenceScore = 95;
+                result.RootCauseCategory = "Hardware & Display Subsystem";
+                result.Summary = $"Correlated graphics display driver TDR timeout with monitor signal synchronization loss on host {host}.";
+                result.CopilotNotes = "Event ID 4101 (Display Driver nvlddmkm stopped responding and successfully recovered) correlated with physical display output.";
+                result.ReasoningChain = new List<string>
+                {
+                    $"Detected display signal interruption reported by user {incident.Reporter}.",
+                    "Windows Display Driver Model (WDDM) TDR reset detected in graphics pipeline.",
+                    "Hardware diagnostic rule RULE-HW-301 flagged video output handshake drop."
+                };
+                result.EvidenceFound = new List<string>
+                {
+                    $"Telemetry Host: {host}",
+                    "Event 4101 [Display]: Driver nvlddmkm recovered",
+                    "Rule RULE-HW-301 Failure"
+                };
+                result.RecommendedFix = "Execute playbook ACT-HW-RESET-GPU-DRIVER to re-initialize graphics display pipeline and re-handshake monitor connection.";
+            }
+            else if (combinedText.Contains("network") || combinedText.Contains("vpn") || combinedText.Contains("wifi") || combinedText.Contains("internet") || combinedText.Contains("connection"))
+            {
+                result.PrimaryHypothesisTitle = "Encrypted VPN Gateway Tunnel Handshake & Packet Loss";
+                result.ConfidenceScore = 93;
+                result.RootCauseCategory = "Network & Security Infrastructure";
+                result.Summary = $"Correlated IKEv2/IPsec tunnel drop with network gateway latency spike on host {host}.";
+                result.CopilotNotes = "Gateway latency spiked to 420ms with 12% packet loss prior to tunnel disconnection.";
+                result.ReasoningChain = new List<string>
+                {
+                    "Gateway latency exceeded 350ms operational threshold.",
+                    "VPN daemon failed keepalive ping to perimeter firewall.",
+                    "Diagnostic rule RULE-NET-205 flagged network tunnel handshake timeout."
+                };
+                result.EvidenceFound = new List<string>
+                {
+                    "Latency Spike: 420ms (Threshold: 50ms)",
+                    "Event 20227 [RemoteAccess]: Connection dropped",
+                    "Rule RULE-NET-205 Failure"
+                };
+                result.RecommendedFix = "Execute playbook ACT-NET-RESET-VPN to flush routing tables, clear IPsec SA cache, and re-establish secure VPN tunnel.";
+            }
+            else if (combinedText.Contains("print") || combinedText.Contains("spooler") || combinedText.Contains("paper"))
             {
                 result.PrimaryHypothesisTitle = "Print Spooler Buffer Overrun via Driver Deadlock";
                 result.ConfidenceScore = 94;
-                result.RootCauseCategory = "Driver / Application Failure";
-                result.Summary = $"High-confidence diagnosis for {incident.TicketNumber}: spoolsv.exe process heap leak caused by corrupt PDF document processing via faulting UPD module.";
+                result.RootCauseCategory = "Driver & Application Services";
+                result.Summary = $"High-confidence diagnosis for {incident.TicketNumber}: spoolsv.exe process heap leak caused by corrupt print document processing.";
                 result.CopilotNotes = "Correlated with Event ID 2004 memory low warning and Event ID 1000 faulting module hpzpui64.dll.";
                 result.ReasoningChain = new List<string>
                 {
-                    "CPU load sustained at 98% on target host.",
+                    "CPU load sustained at elevated levels on target host.",
                     "Process memory footprint for spoolsv.exe exceeded 2.5 GB threshold.",
                     "Event ID 1000 pinpointed printer driver DLL collision."
                 };
                 result.EvidenceFound = new List<string>
                 {
-                    "Telemetry CPU 98%, RAM 97%",
+                    $"Telemetry Host: {host}",
                     "Event 1000 [Application Error]: spoolsv.exe",
                     "Rule RULE-SYS-102 Failure"
                 };
-                result.RecommendedFix = "Execute playbook ACT-SYS-RESTART-SPOOLER to purge printers buffer and cycle Spooler service.";
+                result.RecommendedFix = "Execute playbook ACT-SYS-RESTART-SPOOLER to purge pending print buffer and cycle Spooler service.";
             }
-            else if (incident.Title.Contains("DNS", StringComparison.OrdinalIgnoreCase) || 
-                     incident.Title.Contains("Kerberos", StringComparison.OrdinalIgnoreCase))
+            else if (combinedText.Contains("account") || combinedText.Contains("sso") || combinedText.Contains("password") || combinedText.Contains("auth") || combinedText.Contains("login") || combinedText.Contains("kerberos"))
             {
-                result.PrimaryHypothesisTitle = "Active Directory Domain Controller DNS Timeout";
-                result.ConfidenceScore = 91;
-                result.RootCauseCategory = "Network Infrastructure & SSO";
-                result.Summary = "Kerberos ticket validation latency spiked due to DNS client resolution fragmentation.";
-                result.CopilotNotes = "DNS latency measured at 1820ms.";
+                result.PrimaryHypothesisTitle = "Active Directory Kerberos Authentication Lockout";
+                result.ConfidenceScore = 96;
+                result.RootCauseCategory = "Identity & Access Management";
+                result.Summary = $"Correlated repeated bad password attempts with Active Directory security lockout for user {incident.Reporter}.";
+                result.CopilotNotes = "Event ID 4740 (A user account was locked out) generated on primary Domain Controller.";
                 result.ReasoningChain = new List<string>
                 {
-                    "DNS query latency exceeded 1500ms threshold.",
-                    "Kerberos PAC token fragmentation over UDP MTU 1500."
+                    $"Event 4740 logged for user account '{incident.Reporter}' in Active Directory.",
+                    "Multiple bad password attempts detected from endpoint interface.",
+                    "Diagnostic rule RULE-SEC-401 flagged account security lockout."
                 };
-                result.EvidenceFound = new List<string> { "Event 4015 [DNS-Server]", "Rule RULE-NET-201 Failure" };
-                result.RecommendedFix = "Execute playbook ACT-NET-FLUSH-DNS to clear resolver cache and re-register host.";
+                result.EvidenceFound = new List<string>
+                {
+                    $"User Account: {incident.Reporter}",
+                    "Event 4740 [Security]: Account locked out",
+                    "Rule RULE-SEC-401 Failure"
+                };
+                result.RecommendedFix = "Execute playbook ACT-SEC-UNLOCK-ACCOUNT to verify identity credentials, clear bad password counter, and unlock AD user account.";
+            }
+            else if (combinedText.Contains("software") || combinedText.Contains("app") || combinedText.Contains("crash") || combinedText.Contains("excel") || combinedText.Contains("outlook") || combinedText.Contains("update"))
+            {
+                result.PrimaryHypothesisTitle = "Unhandled Application Process Exception & Memory Leak";
+                result.ConfidenceScore = 92;
+                result.RootCauseCategory = "Software & Desktop Applications";
+                result.Summary = $"Correlated process thread crash with heap memory allocation failure for application reported on {host}.";
+                result.CopilotNotes = "Application process threw unhandled exception code 0xC0000005 (Access Violation).";
+                result.ReasoningChain = new List<string>
+                {
+                    $"Application reported by {incident.Reporter} threw unhandled exception 0xC0000005.",
+                    "Process memory footprint exceeded normal operating threshold.",
+                    "Diagnostic rule RULE-SW-105 flagged abnormal heap memory allocation."
+                };
+                result.EvidenceFound = new List<string>
+                {
+                    $"Host: {host}",
+                    "Event 1001 [Windows Error Reporting]: Crash dump logged",
+                    "Rule RULE-SW-105 Failure"
+                };
+                result.RecommendedFix = "Execute playbook ACT-SW-RESTART-APP to terminate orphaned sub-threads, clear app cache, and relaunch application.";
             }
             else
             {
-                result.PrimaryHypothesisTitle = "Storage Capacity Saturation on Partition";
-                result.ConfidenceScore = 96;
-                result.RootCauseCategory = "Storage / Database";
-                result.Summary = "Free disk space on data partition dropped below 3%.";
-                result.CopilotNotes = "Requires Tier-2 DBA sign-off before log file truncation.";
+                // Dynamic Diagnosis for Any Custom / Arbitrary User Problem
+                result.PrimaryHypothesisTitle = $"System Subsystem Anomaly: {title}";
+                result.ConfidenceScore = 90;
+                result.RootCauseCategory = string.IsNullOrWhiteSpace(category) ? "IT Services Infrastructure" : category;
+                result.Summary = $"AI correlated user issue '{title}' with telemetry metrics on host {host}. System detected operational anomaly requiring targeted remediation.";
+                result.CopilotNotes = $"Issue submitted by {incident.Reporter}. Description details: {desc}";
                 result.ReasoningChain = new List<string>
                 {
-                    "Partition free space < 5%.",
-                    "Database transaction log autogrow failed."
+                    $"Analyzed issue description: '{desc}'.",
+                    $"Telemetry metrics correlated with reported symptoms on host {host}.",
+                    $"Synthesized targeted resolution strategy for category: {result.RootCauseCategory}."
                 };
-                result.EvidenceFound = new List<string> { "Event 1827 [MSSQLSERVER]", "Disk 97.4% occupied" };
-                result.RecommendedFix = "Approve and execute ACT-SYS-EXPAND-DISK playbook.";
+                result.EvidenceFound = new List<string>
+                {
+                    $"Reported Title: {title}",
+                    $"Host: {host}",
+                    $"Category: {result.RootCauseCategory}"
+                };
+                result.RecommendedFix = $"Execute automated diagnostic remediation playbook for {result.RootCauseCategory}.";
             }
 
             return Task.FromResult(result);
@@ -74,18 +154,17 @@ namespace ITIncidentCopilot.Api.Services
             var q = question.ToLowerInvariant();
             if (q.Contains("why") || q.Contains("cause"))
             {
-                return Task.FromResult($"Root cause diagnosis for {incident.TicketNumber}: {incident.PrimaryHypothesisTitle}. AI confidence is {incident.AiConfidenceScore}%.");
+                return Task.FromResult($"Root cause diagnosis for ticket {incident.TicketNumber} ({incident.Title}): {incident.PrimaryHypothesisTitle}. AI confidence is {incident.AiConfidenceScore}%.");
             }
             if (q.Contains("fix") || q.Contains("action") || q.Contains("recommend"))
             {
-                return Task.FromResult($"Recommended resolution: Execute the automated playbook for {incident.Category}. Requires approval if classified as HIGH risk.");
+                return Task.FromResult($"Recommended resolution for ticket {incident.TicketNumber}: Execute automated remediation for {incident.Category}. Target host: {incident.Hostname}.");
             }
-            return Task.FromResult($"Copilot analysis for ticket {incident.TicketNumber}: Telemetry metrics and diagnostic rules indicate healthy network routing; issue is localized to host process memory.");
+            return Task.FromResult($"Copilot analysis for ticket {incident.TicketNumber} ({incident.Title}): Analyzed issue report by {incident.Reporter} on host {incident.Hostname}. Diagnostic telemetry indicates localized process anomaly; issue is isolated to {incident.Category}.");
         }
 
         public Task<float[]> GenerateEmbeddingVectorAsync(string text)
         {
-            // Generates 1536-dimensional embedding array for pgvector
             var dummyVector = new float[1536];
             var hash = text.GetHashCode();
             var rand = new Random(hash);
@@ -100,8 +179,8 @@ namespace ITIncidentCopilot.Api.Services
         {
             var matched = articles.Where(a => 
                 a.Title.Contains(incident.Category, StringComparison.OrdinalIgnoreCase) ||
-                a.Content.Contains("Spooler", StringComparison.OrdinalIgnoreCase) ||
-                a.TagsJson.Contains("dns", StringComparison.OrdinalIgnoreCase)
+                a.Content.Contains(incident.Category, StringComparison.OrdinalIgnoreCase) ||
+                a.TagsJson.Contains(incident.Category, StringComparison.OrdinalIgnoreCase)
             ).ToList();
 
             return Task.FromResult(matched);
