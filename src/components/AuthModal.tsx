@@ -20,7 +20,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('EMPLOYEE');
+  const role: UserRole = 'EMPLOYEE';
 
   // Password Visibility Toggle State
   const [showPassword, setShowPassword] = useState(false);
@@ -328,19 +328,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
             </div>
           )}
 
-          {mode === 'REGISTER' && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('roleLabel')}</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
-                className="w-full px-3 py-2.5 rounded-xl glass-input border-slate-800 text-xs text-slate-200 bg-slate-900 focus:border-cyan-500 transition-all font-mono"
-              >
-                <option value="EMPLOYEE">{t('userRole')}</option>
-                <option value="TECHNICIAN">{t('developerRole')}</option>
-              </select>
-            </div>
-          )}
+          {/* Role is automatically set to Standard Employee for self-registration.
+              Only Admins in the Developer Control Panel can assign developer/technician roles. */}
 
           <button
             type="submit"

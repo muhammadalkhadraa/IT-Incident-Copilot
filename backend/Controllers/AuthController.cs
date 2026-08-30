@@ -137,9 +137,9 @@ namespace ITIncidentCopilot.Api.Controllers
             var initials = string.Join("", nameParts.Select(n => n[0])).ToUpper();
             if (string.IsNullOrEmpty(initials)) initials = "US";
 
-            var role = (req.Role ?? "").ToUpper();
-            if (role == "DEVELOPER") role = "TECHNICIAN";
-            if (string.IsNullOrEmpty(role)) role = "EMPLOYEE";
+            // Self-registration always defaults strictly to standard EMPLOYEE user role.
+            // Role elevation to TECHNICIAN or ADMINISTRATOR can only be performed by Admins via Developer Control Panel.
+            var role = "EMPLOYEE";
 
             var user = new User
             {
