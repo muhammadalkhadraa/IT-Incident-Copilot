@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div>
           <div className="font-extrabold text-sm text-slate-100 font-sans tracking-wide">{t('appTitle')}</div>
           <div className="text-[10px] text-cyan-400 font-mono">
-            {isDeveloperOrAdmin ? 'Developer Console' : 'User Portal'}
+            {isDeveloperOrAdmin ? t('developerConsole') : t('userPortal')}
           </div>
         </div>
       </div>
@@ -60,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Standard User / Employee Dedicated Navigation */}
         {!isDeveloperOrAdmin && (
           <div className="space-y-2">
-            <div className="px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider">User Portal</div>
+            <div className="px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('userPortal')}</div>
             
             <button
               onClick={() => onNavigate('employee-portal')}
@@ -69,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Send className="w-4 h-4 text-cyan-400" />
-              <span>Send Ticket to Developer</span>
+              <span>{t('reportNewIssue')}</span>
             </button>
 
             <button
@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div className="flex items-center gap-3">
                 <AlertCircle className="w-4 h-4 text-amber-400" />
-                <span>My Submitted Tickets</span>
+                <span>{t('myReportedIncidents')}</span>
               </div>
               <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px]">{incidentsCount}</span>
             </button>
@@ -92,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span>Help & Knowledge Base</span>
+              <span>{t('knowledgeBase')}</span>
             </button>
           </div>
         )}
@@ -100,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Developer / Technician / Admin Full Workstation Menu */}
         {isDeveloperOrAdmin && (
           <div className="space-y-1">
-            <div className="px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">Developer Tools</div>
+            <div className="px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">{t('developerTools')}</div>
 
             {/* Dashboard */}
             <button
@@ -110,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <LayoutDashboard className="w-4 h-4 text-cyan-400" />
-              <span>Dashboard</span>
+              <span>{t('dashboard')}</span>
             </button>
 
             {/* Incidents Tree */}
@@ -121,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <div className="flex items-center gap-3">
                   <AlertCircle className="w-4 h-4 text-amber-400" />
-                  <span>Incidents Master</span>
+                  <span>{t('incidentsMaster')}</span>
                 </div>
                 {incidentsOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
               </button>
@@ -134,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       activeView === 'incidents' ? 'text-cyan-300 font-bold bg-cyan-950/40' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    <span>All Tickets</span>
+                    <span>{t('allTickets')}</span>
                     <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[9px]">{incidentsCount}</span>
                   </button>
 
@@ -143,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] text-cyan-400 hover:text-cyan-300 font-bold"
                   >
                     <Plus className="w-3 h-3" />
-                    <span>Raise New Ticket</span>
+                    <span>{t('raiseNewTicket')}</span>
                   </button>
                 </div>
               )}
@@ -157,20 +157,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
-              <span>Diagnostics</span>
+              <span>{t('diagnostics')}</span>
             </button>
-
-            {/* AI Copilot (Commented out for future release)
-            <button
-              onClick={() => onNavigate('copilot')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
-                activeView === 'copilot' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-            >
-              <Bot className="w-4 h-4 text-purple-400" />
-              <span>AI Copilot</span>
-            </button>
-            */}
 
             {/* Knowledge Base */}
             <button
@@ -180,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span>Knowledge Base</span>
+              <span>{t('knowledgeBase')}</span>
             </button>
 
             {/* Similar Incidents */}
@@ -191,7 +179,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Layers className="w-4 h-4 text-sky-400" />
-              <span>Similar Incidents</span>
+              <span>{t('similarIncidents')}</span>
             </button>
 
             {/* Assets */}
@@ -202,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Server className="w-4 h-4 text-cyan-400" />
-              <span>Assets / Devices</span>
+              <span>{t('assetsDevices')}</span>
             </button>
 
             {/* Analytics */}
@@ -213,7 +201,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <TrendingUp className="w-4 h-4 text-purple-400" />
-              <span>Analytics</span>
+              <span>{t('analytics')}</span>
             </button>
 
             {/* Automations */}
@@ -224,20 +212,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Zap className="w-4 h-4 text-amber-400" />
-              <span>Automations</span>
+              <span>{t('automations')}</span>
             </button>
 
             {/* Developer User Control Section */}
             <div className="pt-3 border-t border-slate-800 mt-2 space-y-1">
-              <div className="px-3 text-[10px] text-rose-400 font-bold uppercase tracking-wider mb-1">Developer Admin</div>
+              <div className="px-3 text-[10px] text-rose-400 font-bold uppercase tracking-wider mb-1">{t('developerAdmin')}</div>
               <button
                 onClick={() => onNavigate('users')}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition-all ${
-                  activeView === 'users' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  activeView === 'users' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'text-slate-400 hover:text-rose-200 hover:bg-slate-800/60'
                 }`}
               >
                 <Users className="w-4 h-4 text-rose-400" />
-                <span>Developer User Control</span>
+                <span>{t('userControl')}</span>
               </button>
 
               <button
@@ -247,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }`}
               >
                 <Settings className="w-4 h-4 text-slate-300" />
-                <span>System Settings</span>
+                <span>{t('systemSettings')}</span>
               </button>
 
               <button
@@ -257,7 +245,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }`}
               >
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Audit Logs</span>
+                <span>{t('auditLogs')}</span>
               </button>
             </div>
           </div>

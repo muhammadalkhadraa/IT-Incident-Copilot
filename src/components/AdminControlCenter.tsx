@@ -11,6 +11,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+import { useLanguage } from '../context/LanguageContext';
+
 interface AdminControlCenterProps {
   currentUser: UserProfile;
   auditTrail: AuditLogEntry[];
@@ -26,6 +28,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
   onUpdateUserRole,
   onAddUser
 }) => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'users' | 'settings' | 'audit'>('users');
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -79,7 +82,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
             activeTab === 'users' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Users className="w-4 h-4" /> User Directory ({users.length})
+          <Users className="w-4 h-4" /> {t('userControl')} ({users.length})
         </button>
         <button
           onClick={() => setActiveTab('settings')}
@@ -87,7 +90,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
             activeTab === 'settings' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Settings className="w-4 h-4" /> System Settings & SSO
+          <Settings className="w-4 h-4" /> {t('systemSettings')}
         </button>
         <button
           onClick={() => setActiveTab('audit')}
@@ -95,7 +98,7 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
             activeTab === 'audit' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <FileLock className="w-4 h-4" /> System Audit Stream
+          <FileLock className="w-4 h-4" /> {t('auditLogs')} ({auditTrail.length})
         </button>
       </div>
 

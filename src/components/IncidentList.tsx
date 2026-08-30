@@ -11,6 +11,7 @@ import {
   Grid
 } from 'lucide-react';
 import type { Incident, IncidentSeverity, IncidentStatus } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 interface IncidentListProps {
   incidents: Incident[];
@@ -27,6 +28,7 @@ export const IncidentList: React.FC<IncidentListProps> = ({
   onNewIncidentClick,
   searchQuery
 }) => {
+  const { t } = useLanguage();
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'CARD' | 'TABLE'>('TABLE');
@@ -212,13 +214,13 @@ export const IncidentList: React.FC<IncidentListProps> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-900/80 border-b border-slate-800 text-[11px] font-mono text-slate-400 uppercase">
-                <th className="p-3">Ticket ID</th>
-                <th className="p-3">Priority</th>
-                <th className="p-3">Title & Summary</th>
-                <th className="p-3">Target Device</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-right">AI Confidence</th>
-                <th className="p-3 text-right">Action</th>
+                <th className="p-3">{t('ticketNumber')}</th>
+                <th className="p-3">{t('severity')}</th>
+                <th className="p-3">{t('title')}</th>
+                <th className="p-3">{t('hostname')}</th>
+                <th className="p-3">{t('status')}</th>
+                <th className="p-3 text-right">{t('confidence')}</th>
+                <th className="p-3 text-right">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-xs">
@@ -261,7 +263,7 @@ export const IncidentList: React.FC<IncidentListProps> = ({
                         }}
                         className="px-2.5 py-1 rounded bg-slate-800 hover:bg-cyan-600 hover:text-white border border-slate-700 text-[11px] font-bold transition-all inline-flex items-center gap-1"
                       >
-                        <span>Diagnose</span>
+                        <span>{t('viewWorkstation')}</span>
                         <ArrowUpRight className="w-3 h-3" />
                       </button>
                     </td>

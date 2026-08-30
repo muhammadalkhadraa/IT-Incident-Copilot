@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text"
-              placeholder="Search tickets..."
+              placeholder={t('searchPlaceholder')}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full glass-input text-xs pl-9 pr-3 py-1.5 rounded-lg border-slate-700/80 placeholder:text-slate-500"
             />
@@ -112,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
               title={`${pendingApprovalsCount} script actions pending approval (${criticalCount} critical)`}
             >
               <AlertTriangle className="w-4 h-4" />
-              <span>{pendingApprovalsCount} Approvals Needed</span>
+              <span>{pendingApprovalsCount} {t('approvalsNeeded')}</span>
             </button>
           )}
 
