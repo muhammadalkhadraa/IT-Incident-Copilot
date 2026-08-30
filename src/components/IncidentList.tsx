@@ -244,9 +244,12 @@ export const IncidentList: React.FC<IncidentListProps> = ({
                     <td className="p-3 whitespace-nowrap">
                       {getSeverityBadge(incident.severity)}
                     </td>
-                    <td className="p-3">
-                      <div className="font-bold text-slate-200 line-clamp-1">{incident.title}</div>
-                      <div className="text-[11px] text-slate-400 line-clamp-1 font-mono">{incident.affectedService}</div>
+                    <td className="p-3 max-w-xs md:max-w-md">
+                      <div className="font-bold text-slate-100 text-xs">{incident.title}</div>
+                      <div className="text-[11px] text-slate-300 mt-1 leading-relaxed bg-slate-900/80 p-2 rounded-lg border border-slate-800/80">
+                        {incident.description}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-1">Category: {incident.affectedService}</div>
                     </td>
                     <td className="p-3 font-mono text-slate-300 whitespace-nowrap">
                       {incident.deviceTelemetry.hostname}

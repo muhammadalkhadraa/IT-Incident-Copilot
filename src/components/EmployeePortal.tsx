@@ -224,7 +224,10 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                     </span>
                   </div>
 
-                  <h4 className="text-sm font-bold text-slate-100 line-clamp-1">{incident.title}</h4>
+                  <h4 className="text-sm font-bold text-slate-100">{incident.title}</h4>
+                  <p className="text-xs text-slate-300 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80 leading-relaxed">
+                    {incident.description}
+                  </p>
 
                   <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-1">
                     <span>Tech: {incident.assignedTechnician || 'Auto-Dispatch'}</span>
