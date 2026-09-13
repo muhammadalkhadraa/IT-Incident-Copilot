@@ -106,10 +106,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
     try {
       if (mode === 'LOGIN') {
         const res = await apiService.login(email, password);
+        setPassword('');
+        setEmail('');
         onLoginSuccess(res.user, res.accessToken);
         if (onClose) onClose();
       } else {
         const res = await apiService.register(name, email, password, role);
+        setPassword('');
+        setEmail('');
+        setName('');
         onLoginSuccess(res.user, res.accessToken);
         if (onClose) onClose();
       }
@@ -197,7 +202,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
         )}
 
         {/* Auth Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form method="POST" action="#" onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
           
           {mode === 'REGISTER' && (
             <div>
@@ -207,6 +212,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
                 <input
                   type="text"
                   required
+                  autoComplete="off"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Alex Thorne"
@@ -223,6 +229,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
               <input
                 type="email"
                 required
+                autoComplete="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@corp.internal"
@@ -252,6 +259,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
@@ -303,6 +311,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••••••"
