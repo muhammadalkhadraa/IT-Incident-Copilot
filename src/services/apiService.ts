@@ -511,7 +511,7 @@ export const apiService = {
         throw new Error(err.message || 'An account with this email address already exists. Please sign in instead.');
       }
     } catch (err: any) {
-      if (err.message && (err.message.includes('already exists') || err.message.includes('required') || err.message.includes('at least 8') || err.message.includes('failed') || err.message.includes('Registration'))) {
+      if (err.message && (err.message.includes('already exists') || err.message.includes('required') || err.message.includes('at least 8'))) {
         throw err;
       }
     }

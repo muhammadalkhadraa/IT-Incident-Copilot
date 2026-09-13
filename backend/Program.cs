@@ -16,11 +16,12 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 
-// Configure Database Provider (Defaults to zero-config local SQLite database it_copilot.db)
-var dbProvider = builder.Configuration["DbProvider"] ?? "Sqlite";
-var connString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Configure Database Provider (Primary: PostgreSQL for DBeaver & SQL tools; Fallback: SQLite)
+var dbProvider = builder.Configuration["DbProvider"] ?? "PostgreSQL";
+var connString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Host=localhost;Database=it_copilot;Username=postgres;Password=copilot_secure_pass_2026";
 
-if (dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(connString))
+if (dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connString));
