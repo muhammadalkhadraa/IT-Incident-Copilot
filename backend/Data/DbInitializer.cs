@@ -31,9 +31,20 @@ namespace ITIncidentCopilot.Api.Data
                 await context.SaveChangesAsync();
             }
 
+            // Ensure default admin user alkhadraamuhammad@gmail.com exists
+            var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == "alkhadraamuhammad@gmail.com");
+            if (adminUser == null)
+            {
+                var user0 = new User { Id = Guid.NewGuid(), Name = "Muhammad Alkhadraa", Email = "alkhadraamuhammad@gmail.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"), Role = "ADMINISTRATOR", Department = "IT Infrastructure & Ops", Title = "Lead System Administrator", Avatar = "MA" };
+                var user1 = new User { Id = Guid.NewGuid(), Name = "Alex Thorne", Email = "alex.thorne@corp.internal", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"), Role = "TECHNICIAN", Department = "IT Infrastructure & Ops", Title = "Senior Systems Engineer", Avatar = "AT" };
+                var user2 = new User { Id = Guid.NewGuid(), Name = "Marcus Vance", Email = "marcus.vance@corp.internal", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"), Role = "EMPLOYEE", Department = "Executive Suite", Title = "Chief Technology Officer", Avatar = "MV" };
+                context.Users.AddRange(user0, user1, user2);
+                await context.SaveChangesAsync();
+            }
+
             if (await context.Incidents.AnyAsync())
             {
-                return; // DB has already been seeded
+                return; // DB incidents already seeded
             }
 
             // 1. Seed Roles & Departments
@@ -45,11 +56,6 @@ namespace ITIncidentCopilot.Api.Data
             var roleTech = new Role { Id = Guid.NewGuid(), RoleName = "TECHNICIAN", PermissionsJson = "[\"read\", \"write\", \"execute\"]" };
             var roleEmp = new Role { Id = Guid.NewGuid(), RoleName = "EMPLOYEE", PermissionsJson = "[\"read\"]" };
             context.Roles.AddRange(roleAdmin, roleTech, roleEmp);
-
-            // 2. Seed Demo Users
-            var user1 = new User { Id = Guid.NewGuid(), Name = "Alex Thorne", Email = "alex.thorne@corp.internal", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"), Role = "TECHNICIAN", Department = "IT Infrastructure & Ops", Title = "Senior Systems Engineer", Avatar = "AT" };
-            var user2 = new User { Id = Guid.NewGuid(), Name = "Marcus Vance", Email = "marcus.vance@corp.internal", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"), Role = "EMPLOYEE", Department = "Executive Suite", Title = "Chief Technology Officer", Avatar = "MV" };
-            context.Users.AddRange(user1, user2);
 
             // 3. Seed Devices
             var dev1 = new Device

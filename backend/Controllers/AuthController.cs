@@ -126,10 +126,11 @@ namespace ITIncidentCopilot.Api.Controllers
                 return BadRequest(new { message = "Password must be at least 8 characters long." });
             }
 
-            var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == req.Email.ToLower());
+            var cleanEmail = req.Email.Trim().ToLower();
+            var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == cleanEmail);
             if (existingUser != null)
             {
-                return BadRequest(new { message = "An account with this email address already exists." });
+                return BadRequest(new { message = "An account with this email address already exists. Please sign in instead." });
             }
 
             var hashedPassword = _jwtService.HashPassword(req.Password);
@@ -145,7 +146,7 @@ namespace ITIncidentCopilot.Api.Controllers
             {
                 Id = Guid.NewGuid(),
                 Name = req.Name,
-                Email = req.Email.ToLower(),
+                Email = cleanEmail,
                 PasswordHash = hashedPassword,
                 Role = role,
                 Department = req.Department,

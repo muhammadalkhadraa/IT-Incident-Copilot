@@ -6,8 +6,7 @@ import {
   MessageSquare, 
   Send, 
   FileText,
-  LifeBuoy,
-  Laptop
+  LifeBuoy
 } from 'lucide-react';
 
 import { apiService } from '../services/apiService';
@@ -37,7 +36,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
   onAddComment
 }) => {
   const { t } = useLanguage();
-  // Filter tickets strictly created by or belonging to this specific user
+  // Filter tickets created by or belonging to this specific user
   const myIncidents = incidents.filter(i => {
     if (!i.reporter) return false;
     const rep = i.reporter.toLowerCase();
@@ -48,7 +47,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
 
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [newTicketTitle, setNewTicketTitle] = useState('');
-  const [newTicketCategory, setNewTicketCategory] = useState('Hardware & Monitors');
+  const [newTicketCategory, setNewTicketCategory] = useState('Hardware & Devices');
   const [newTicketDesc, setNewTicketDesc] = useState('');
   const [assignedTechnician, setAssignedTechnician] = useState('Alex Thorne');
   const [developerUsers, setDeveloperUsers] = useState<UserProfile[]>([]);
@@ -75,61 +74,6 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
     loadDevelopers();
   }, []);
 
-  // Real Device Network Telemetry State
-  const [deviceHostname, setDeviceHostname] = useState('Extracting PC Data...');
-  const [deviceIpAddress, setDeviceIpAddress] = useState('Extracting IP...');
-  const [deviceMacAddress, setDeviceMacAddress] = useState('Extracting MAC...');
-
-  // Automatically extract real PC data (Hostname, Real IP, Physical MAC Address)
-  React.useEffect(() => {
-    if (!showNewForm) return;
-
-    async function extractRealPcData() {
-      // 1. Try Backend Telemetry API (Local or Cloud Server)
-      try {
-        const telemetry = await apiService.fetchMyDeviceTelemetry();
-        if (telemetry.hostname) setDeviceHostname(telemetry.hostname);
-        if (telemetry.ipAddress) setDeviceIpAddress(telemetry.ipAddress);
-        if (telemetry.macAddress) setDeviceMacAddress(telemetry.macAddress);
-        return;
-      } catch (err) {
-        console.warn('Backend API unreachable or running on static Vercel host, using client-side extraction:', err);
-      }
-
-      // 2. Client-side Extraction (Guaranteed to work on Vercel / Netlify for any remote user device)
-      try {
-        const ipRes = await fetch('https://api.ipify.org?format=json');
-        let realIp = '192.168.1.100';
-        if (ipRes.ok) {
-          const ipData = await ipRes.json();
-          if (ipData.ip) realIp = ipData.ip;
-        }
-        setDeviceIpAddress(realIp);
-
-        // Detect Client OS & Generate Device Hostname
-        const ua = navigator.userAgent;
-        let osPrefix = 'DESKTOP-WIN11';
-        if (ua.includes('Mac')) osPrefix = 'MACBOOK-WORKSTATION';
-        else if (ua.includes('Linux')) osPrefix = 'LINUX-[#882]';
-        else if (ua.includes('Android')) osPrefix = 'ANDROID-DEVICE';
-        else if (ua.includes('iPhone')) osPrefix = 'IPHONE-MOBILE';
-
-        const lastOctet = realIp.split('.').pop() || '01';
-        setDeviceHostname(`${osPrefix}-NET${lastOctet}`);
-
-        // Generate Connection MAC Hash
-        const octetsSum = realIp.split('.').reduce((acc, oct) => acc + parseInt(oct || '0', 10), 0);
-        const h1 = ((octetsSum * 19) % 255).toString(16).padStart(2, '0').toUpperCase();
-        const h2 = ((octetsSum * 43) % 255).toString(16).padStart(2, '0').toUpperCase();
-        const h3 = ((octetsSum * 89) % 255).toString(16).padStart(2, '0').toUpperCase();
-        setDeviceMacAddress(`B8:27:EB:${h1}:${h2}:${h3}`);
-      } catch (err) {
-        console.warn('Fallback client telemetry extraction failed:', err);
-      }
-    }
-    extractRealPcData();
-  }, [showNewForm]);
-
   const selectedIncident = myIncidents.find(i => i.id === selectedIncidentId) || myIncidents[0] || null;
 
   const handleSubmitTicket = (e: React.FormEvent) => {
@@ -141,9 +85,9 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
       newTicketCategory,
       newTicketDesc,
       attachmentFileName,
-      deviceHostname,
-      deviceIpAddress,
-      deviceMacAddress,
+      'MY-WORKSTATION-PC',
+      '192.168.1.105',
+      '00:1A:2B:7C:8D:9E',
       assignedTechnician
     );
 
@@ -165,22 +109,22 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
     <div className="space-y-6">
       
       {/* Welcome Banner */}
-      <div className="p-6 rounded-2xl glass-panel border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-2xl glass-panel border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <LifeBuoy className="w-6 h-6 text-cyan-400" />
-            <h2 className="text-lg font-extrabold text-slate-100 font-mono">
+            <h2 className="text-xl font-extrabold text-slate-100">
               {t('employeePortalBanner')}
             </h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Welcome back, <strong className="text-cyan-300">{user.name}</strong> ({user.department}). Report IT issues, track resolution progress, and message your assigned technician.
+            Welcome, <strong className="text-cyan-300">{user.name}</strong>. Submit your ticket below and our support team will help you right away.
           </p>
         </div>
 
         <button
           onClick={() => setShowNewForm(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 text-white font-bold text-xs shadow-glow-cyan hover:opacity-90 transition-all shrink-0"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-glow-cyan transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>{t('reportNewIssue')}</span>
@@ -191,13 +135,13 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
         
         {/* Left Column: My Tickets List */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-slate-400 font-mono uppercase tracking-wider">
-            My Reported Incidents ({myIncidents.length})
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            {t('myReportedIncidents')} ({myIncidents.length})
           </h3>
 
           {myIncidents.length === 0 ? (
             <div className="p-8 text-center glass-panel rounded-2xl border-slate-800 text-xs text-slate-500">
-              You currently have no open IT tickets.
+              {t('noTickets')}
             </div>
           ) : (
             myIncidents.map((incident) => {
@@ -216,11 +160,10 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                       {incident.ticketNumber}
                     </span>
 
-                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono font-bold ${
-                      incident.status === 'RESOLVED' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
-                      incident.status === 'AWAITING_APPROVAL' ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-cyan-950 text-cyan-300 border border-cyan-800'
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      incident.status === 'RESOLVED' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-cyan-950 text-cyan-300 border border-cyan-800'
                     }`}>
-                      {incident.status.replace('_', ' ')}
+                      {incident.status === 'RESOLVED' ? 'Resolved' : 'Open'}
                     </span>
                   </div>
 
@@ -229,8 +172,8 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                     {incident.description}
                   </p>
 
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-1">
-                    <span>Tech: {incident.assignedTechnician || 'Auto-Dispatch'}</span>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                    <span>Assigned: {incident.assignedTechnician || 'Support Team'}</span>
                     <span>{new Date(incident.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -239,7 +182,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
           )}
         </div>
 
-        {/* Right Column: Ticket Detail & IT Communication Stream */}
+        {/* Right Column: Ticket Detail & Replies Thread */}
         <div className="lg:col-span-2">
           {selectedIncident ? (
             <div className="p-6 rounded-2xl glass-panel border-slate-800 space-y-6">
@@ -250,43 +193,25 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                   <span className="font-mono font-bold text-xs text-cyan-400 bg-cyan-950 px-2.5 py-0.5 rounded border border-cyan-800">
                     {selectedIncident.ticketNumber}
                   </span>
-                  <span className="text-xs text-slate-400 font-mono">Assigned Tech: <strong className="text-slate-200">{selectedIncident.assignedTechnician || 'Tier-2 Desk'}</strong></span>
+                  <span className="text-xs text-slate-400 font-medium">Assigned Support Agent: <strong className="text-slate-200">{selectedIncident.assignedTechnician || 'Support Desk'}</strong></span>
                 </div>
 
                 <h3 className="text-lg font-extrabold text-slate-100">{selectedIncident.title}</h3>
                 <p className="text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 leading-relaxed">
                   {selectedIncident.description}
                 </p>
-
-                {/* Device Telemetry Banner */}
-                {selectedIncident.deviceTelemetry && (
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 grid grid-cols-3 gap-2 text-xs font-mono">
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase">Device Host</div>
-                      <div className="font-bold text-slate-200">{selectedIncident.deviceTelemetry.hostname}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase">IP Address</div>
-                      <div className="font-bold text-slate-300">{selectedIncident.deviceTelemetry.ipAddress}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase">MAC Address</div>
-                      <div className="font-bold text-cyan-400">{selectedIncident.deviceTelemetry.macAddress || '00:1A:2B:7C:8D:9E'}</div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Attachments Section */}
               {selectedIncident.attachments && selectedIncident.attachments.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-slate-400 font-mono uppercase flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1.5">
                     <Paperclip className="w-3.5 h-3.5 text-cyan-400" /> Attached Files ({selectedIncident.attachments.length})
                   </h4>
 
                   <div className="flex flex-wrap gap-3">
                     {selectedIncident.attachments.map((att) => (
-                      <div key={att.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs flex items-center gap-2 text-slate-300 font-mono">
+                      <div key={att.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs flex items-center gap-2 text-slate-300">
                         <FileText className="w-4 h-4 text-cyan-400" />
                         <div>
                           <div className="font-bold text-slate-200">{att.filename}</div>
@@ -298,11 +223,11 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                 </div>
               )}
 
-              {/* Communication Stream */}
+              {/* Replies Thread */}
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-300 font-mono flex items-center gap-2">
+                <h4 className="text-xs font-bold text-slate-300 flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-purple-400" />
-                  COMMUNICATION STREAM WITH IT SERVICE DESK
+                  {t('communicationStream')}
                 </h4>
 
                 <div className="bg-[#05080f] rounded-xl p-4 border border-slate-800 space-y-3 max-h-72 overflow-y-auto">
@@ -314,7 +239,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                           : 'bg-slate-900 text-slate-200 border border-slate-800 rounded-tl-none'
                       }`}>
                         <div className="flex items-center justify-between gap-3 text-[10px] opacity-75 font-mono mb-1">
-                          <span>{cmt.authorName} ({cmt.authorRole})</span>
+                          <span>{cmt.authorName}</span>
                           <span>{cmt.timestamp}</span>
                         </div>
                         <p>{cmt.content}</p>
@@ -323,20 +248,20 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                   ))}
                 </div>
 
-                {/* Add Comment Input Form */}
+                {/* Add Reply Input */}
                 <form onSubmit={handleSendComment} className="flex gap-2">
                   <input
                     type="text"
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
-                    placeholder="Type a message to your assigned IT Technician..."
-                    className="flex-1 glass-input text-xs px-4 py-2.5 rounded-xl border-slate-700/80"
+                    placeholder={t('typeMessage')}
+                    className="flex-1 glass-input text-xs px-4 py-2.5 rounded-xl border-slate-700/80 focus:outline-none focus:border-cyan-500/50"
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 text-white font-semibold text-xs shadow-glow-cyan hover:opacity-90 transition-all flex items-center gap-1.5 shrink-0"
+                    className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-glow-cyan transition-all flex items-center gap-1.5 shrink-0"
                   >
-                    <span>Send</span>
+                    <span>{t('send')}</span>
                     <Send className="w-3.5 h-3.5" />
                   </button>
                 </form>
@@ -345,140 +270,85 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
             </div>
           ) : (
             <div className="p-12 text-center glass-panel rounded-2xl border-slate-800 text-xs text-slate-500">
-              Select an incident from the left to view IT updates and communications.
+              Select a ticket from the left to view updates and messages.
             </div>
           )}
         </div>
 
       </div>
 
-      {/* New Ticket Modal */}
+      {/* New Ticket Form Modal */}
       {showNewForm && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form onSubmit={handleSubmitTicket} className="bg-[#0d131f] border border-cyan-500/40 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 font-sans">
             <div className="flex items-center gap-2 text-cyan-400">
               <Plus className="w-5 h-5" />
-              <h3 className="text-base font-bold text-slate-100">Submit New IT Incident</h3>
+              <h3 className="text-base font-bold text-slate-100">{t('reportNewIssue')}</h3>
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Problem Title</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('problemTitle')}</label>
               <input
                 type="text"
                 value={newTicketTitle}
                 onChange={(e) => setNewTicketTitle(e.target.value)}
-                placeholder="e.g. Monitor display flashing on Workstation"
+                placeholder="e.g. Cannot connect to office Wi-Fi"
                 required
-                className="w-full glass-input text-xs px-3 py-2 rounded-xl border-slate-700"
+                className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-slate-700 focus:outline-none focus:border-cyan-500/50"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Category</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('category')}</label>
               <select
                 value={newTicketCategory}
                 onChange={(e) => setNewTicketCategory(e.target.value)}
-                className="w-full glass-input text-xs px-3 py-2 rounded-xl border-slate-700 text-slate-200"
+                className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-slate-700 text-slate-200 focus:outline-none"
               >
-                <option value="Hardware & Monitors">Hardware & Monitors</option>
-                <option value="Software & Apps">Software & Applications</option>
-                <option value="Network & VPN">Network & VPN Access</option>
-                <option value="Printer Services">Printer Services</option>
-                <option value="Account & SSO">Account & SSO Access</option>
+                <option value="Internet & Network">Internet & Network</option>
+                <option value="Password & Account">Password & Account</option>
+                <option value="Hardware & Devices">Hardware & Devices</option>
+                <option value="Software & Apps">Software & Apps</option>
+                <option value="General Support">General Support</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-cyan-400 mb-1 font-bold flex items-center justify-between">
-                <span>Assign Task to Developer / Technician</span>
-                <span className="text-[10px] text-slate-400 font-normal">Select Assigned Developer</span>
-              </label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Assigned Support Agent</label>
               <select
                 value={assignedTechnician}
                 onChange={(e) => setAssignedTechnician(e.target.value)}
-                className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-cyan-500/50 text-cyan-300 font-mono font-bold bg-slate-900 focus:border-cyan-400 shadow-glow-cyan"
+                className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-slate-700 text-slate-200 focus:outline-none"
               >
                 {developerUsers.map(dev => (
                   <option key={dev.id} value={dev.name}>
-                    👨‍💻 {dev.name} ({dev.title || 'IT Developer'} - {dev.department || 'Service Desk'})
+                    👤 {dev.name} ({dev.department || 'Support Desk'})
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Detailed Description</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('description')}</label>
               <textarea
                 value={newTicketDesc}
                 onChange={(e) => setNewTicketDesc(e.target.value)}
                 rows={3}
-                placeholder="Describe what happened, error popups, and urgency..."
+                placeholder="Describe your issue in detail..."
                 required
-                className="w-full glass-input text-xs p-3 rounded-xl border-slate-700"
+                className="w-full glass-input text-xs p-3 rounded-xl border-slate-700 focus:outline-none focus:border-cyan-500/50"
               />
             </div>
 
-            {/* User Device Telemetry Details */}
-            <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3 font-mono">
-              <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Laptop className="w-4 h-4 text-cyan-400" />
-                  Your Device Telemetry
-                </span>
-                <span className="text-[10px] text-slate-400 font-normal">Sent to Developer</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">Device Hostname</label>
-                  <input
-                    type="text"
-                    value={deviceHostname}
-                    onChange={(e) => setDeviceHostname(e.target.value)}
-                    placeholder="WORKSTATION-PC01"
-                    className="w-full glass-input text-xs px-2.5 py-1.5 rounded-lg border-slate-700 text-slate-200 font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">IP Address</label>
-                  <input
-                    type="text"
-                    value={deviceIpAddress}
-                    onChange={(e) => setDeviceIpAddress(e.target.value)}
-                    placeholder="192.168.1.105"
-                    className="w-full glass-input text-xs px-2.5 py-1.5 rounded-lg border-slate-700 text-slate-200 font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">MAC Address</label>
-                  <input
-                    type="text"
-                    value={deviceMacAddress}
-                    onChange={(e) => setDeviceMacAddress(e.target.value)}
-                    placeholder="e.g. A4:83:E7:44:88:99"
-                    className="w-full glass-input text-xs px-2.5 py-1.5 rounded-lg border-slate-700 text-cyan-400 font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <p className="text-[10px] text-slate-400 font-sans leading-snug pt-1">
-                💡 <strong>IP & MAC Detection:</strong> Your real public IP address was auto-detected. Browsers block direct hardware MAC address reading for security. You can edit your exact Hostname, IP, or MAC address above before sending to the developer.
-              </p>
-            </div>
-
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Simulate File Attachment</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={attachmentFileName}
-                  onChange={(e) => setAttachmentFileName(e.target.value)}
-                  placeholder="e.g. error_screenshot.png"
-                  className="flex-1 glass-input text-xs px-3 py-2 rounded-xl border-slate-700"
-                />
-              </div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Attach File (Optional)</label>
+              <input
+                type="text"
+                value={attachmentFileName}
+                onChange={(e) => setAttachmentFileName(e.target.value)}
+                placeholder="e.g. screenshot.png"
+                className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-slate-700"
+              />
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
@@ -487,13 +357,13 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                 onClick={() => setShowNewForm(false)}
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 text-white text-xs font-extrabold shadow-glow-cyan"
+                className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-extrabold shadow-glow-cyan"
               >
-                Submit Ticket
+                {t('submitTicket')}
               </button>
             </div>
           </form>

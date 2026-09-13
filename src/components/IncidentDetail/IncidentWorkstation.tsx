@@ -1,27 +1,7 @@
 import React, { useState } from 'react';
 import type { Incident, PlaybookAction, IncidentStatus } from '../../types';
-import { IncidentStateMachine } from '../../services/incidentStateMachine';
-import { PriorityCalculator } from '../../services/priorityCalculator';
-import { 
-  ArrowLeft, 
-  Activity, 
-  SlidersHorizontal, 
-  // BookOpen, 
-  Terminal, 
-  ShieldCheck,
-  AlertTriangle,
-  RotateCcw,
-  BarChart2,
-  Users,
-  ShieldAlert,
-  Building
-} from 'lucide-react';
-import { TelemetryPanel } from './TelemetryPanel';
-import { DiagnosticRulesPanel } from './DiagnosticRulesPanel';
-// import { AICopilotPanel } from './AICopilotPanel'; (Reserved for future work)
-import { SimilarIncidentsPanel } from './SimilarIncidentsPanel';
-import { ActionApprovalTerminal } from './ActionApprovalTerminal';
-import { AuditTrailPanel } from './AuditTrailPanel';
+import { ArrowLeft } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface IncidentWorkstationProps {
   incident: Incident;
@@ -35,255 +15,225 @@ export const IncidentWorkstation: React.FC<IncidentWorkstationProps> = ({
   incident,
   onBack,
   onUpdateStatus,
-  onExecutePlaybook,
-  onReRunDiagnostics
 }) => {
-  const [activeStep, setActiveStep] = useState<string>('diagnostics');
-  const [showReopenModal, setShowReopenModal] = useState(false);
-  const [reopenReason, setReopenReason] = useState('');
-  const [transitionError, setTransitionError] = useState<string | null>(null);
+  const { t } = useLanguage();
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState(incident.comments || []);
+  const [showAiAdvice, setShowAiAdvice] = useState(false);
 
-  // Compute multi-factor priority breakdown
-  const priorityInfo = PriorityCalculator.evaluateIncidentPriority(incident);
-
-  const steps = [
-    { id: 'telemetry', label: '1. Telemetry & Evidence', icon: Activity },
-    { id: 'diagnostics', label: '2. Diagnostic Rules', icon: SlidersHorizontal },
-    // { id: 'ai-copilot', label: '3. AI Copilot Diagnosis (Future Feature)', icon: Bot, highlight: true },
-    // { id: 'rag-similar', label: '3. Similar Incidents (RAG) (Future Feature)', icon: BookOpen },
-    { id: 'action-runner', label: '3. Action & Approval', icon: Terminal },
-    // { id: 'audit-trail', label: '4. Compliance Audit (Future Feature)', icon: ShieldCheck },
-  ];
-
-  const handleStatusSelect = (targetStatus: IncidentStatus) => {
-    setTransitionError(null);
-
-    // Guard: Prevent illegal transitions
-    if (!IncidentStateMachine.canTransition(incident.status, targetStatus)) {
-      setTransitionError(`Illegal Transition: Cannot jump directly from ${incident.status} to ${targetStatus}.`);
-      return;
-    }
-
-    // Special Guard: Reopening CLOSED ticket requires explicit reason modal
-    if (incident.status === 'CLOSED' && targetStatus === 'NEW') {
-      setShowReopenModal(true);
-      return;
-    }
-
-    onUpdateStatus(incident.id, targetStatus);
-  };
-
-  const handleConfirmReopen = (e: React.FormEvent) => {
+  const handleSendComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reopenReason.trim()) return;
+    if (!commentText.trim()) return;
 
-    onUpdateStatus(incident.id, 'NEW', reopenReason);
-    setShowReopenModal(false);
-    setReopenReason('');
+    const newComment = {
+      id: `cmt-${Date.now()}`,
+      incidentId: incident.id,
+      authorId: 'usr-agent',
+      authorName: 'Support Agent',
+      authorRole: 'TECHNICIAN' as const,
+      authorAvatar: 'SA',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: commentText
+    };
+
+    setComments([...comments, newComment]);
+    setCommentText('');
   };
 
-  const validNextStatuses = IncidentStateMachine.getValidNextStatuses(incident.status);
+  const getPriorityBadge = (sev: string) => {
+    switch (sev) {
+      case 'CRITICAL':
+        return <span className="px-3 py-1 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold text-xs">Urgent</span>;
+      case 'HIGH':
+        return <span className="px-3 py-1 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-xs">High Priority</span>;
+      case 'MEDIUM':
+        return <span className="px-3 py-1 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 font-bold text-xs">Medium Priority</span>;
+      default:
+        return <span className="px-3 py-1 rounded-md bg-slate-700/40 text-slate-300 border border-slate-600 font-bold text-xs">Low Priority</span>;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'NEW':
+        return <span className="px-3 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-700 text-xs font-bold">Open</span>;
+      case 'DIAGNOSING':
+      case 'AWAITING_APPROVAL':
+      case 'REMEDIATING':
+        return <span className="px-3 py-1 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-xs font-bold">In Progress</span>;
+      case 'RESOLVED':
+        return <span className="px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 text-xs font-bold">Resolved</span>;
+      default:
+        return <span className="px-3 py-1 rounded-full bg-slate-900 text-slate-400 border border-slate-800 text-xs font-bold">Closed</span>;
+    }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto">
       
-      {/* Transition Error Alert Banner */}
-      {transitionError && (
-        <div className="p-4 rounded-xl bg-rose-950/80 border border-rose-800 text-xs font-mono text-rose-300 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>{transitionError}</span>
-          </div>
-          <button onClick={() => setTransitionError(null)} className="text-slate-400 hover:text-white font-bold">✕</button>
-        </div>
-      )}
-
-      {/* Workstation Header & Priority Calculation Scorecard */}
-      <div className="p-5 rounded-2xl glass-panel border-slate-800 space-y-4">
-        
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* Header Bar */}
+      <div className="p-6 rounded-2xl glass-panel border-slate-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button
               onClick={onBack}
               className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700"
-              title="Back to Incidents Hub"
+              title="Back to Tickets"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
 
             <div>
               <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-xs text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800">
+                <span className="font-mono font-bold text-xs text-cyan-400 bg-cyan-950 px-2.5 py-1 rounded-md border border-cyan-800">
                   {incident.ticketNumber}
                 </span>
-                <span className="text-xs text-slate-400 font-mono">Device: {incident.deviceTelemetry.hostname}</span>
+                {getPriorityBadge(incident.severity)}
+                {getStatusBadge(incident.status)}
               </div>
-              <h1 className="text-lg font-extrabold text-slate-100 mt-1">{incident.title}</h1>
+              <h1 className="text-xl font-extrabold text-slate-100 mt-2">{incident.title}</h1>
             </div>
           </div>
 
-          {/* State Machine Status Switcher Controls */}
-          <div className="flex items-center gap-3 shrink-0">
-            {incident.status === 'NEW' && (
+          {/* Quick 1-Click Status Update Buttons */}
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            {incident.status !== 'NEW' && (
               <button
-                onClick={() => handleStatusSelect('DIAGNOSING')}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-glow-emerald transition-all shrink-0 font-mono"
+                onClick={() => onUpdateStatus(incident.id, 'NEW')}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all border border-slate-700"
               >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Accept Ticket into Queue</span>
+                Mark Open
               </button>
             )}
-
-            <span className="text-xs text-slate-400 font-mono">State Machine:</span>
-            
-            {incident.status === 'CLOSED' ? (
+            {incident.status !== 'DIAGNOSING' && (
               <button
-                onClick={() => setShowReopenModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-950 text-rose-300 border border-rose-800 hover:bg-rose-900 font-bold text-xs transition-all"
+                onClick={() => onUpdateStatus(incident.id, 'DIAGNOSING')}
+                className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs transition-all border border-amber-500/40"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>CLOSED (Click to Reopen)</span>
+                Mark In Progress
               </button>
-            ) : (
-              <select
-                value={incident.status}
-                onChange={(e) => handleStatusSelect(e.target.value as IncidentStatus)}
-                className="glass-input text-xs px-3 py-1.5 rounded-xl border-slate-700 font-bold text-cyan-300 bg-slate-900"
+            )}
+            {incident.status !== 'RESOLVED' && (
+              <button
+                onClick={() => onUpdateStatus(incident.id, 'RESOLVED')}
+                className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-glow-emerald"
               >
-                <option value={incident.status}>{incident.status} (Current)</option>
-                {validNextStatuses.map((st) => (
-                  <option key={st} value={st}>
-                    → Transition to {st}
-                  </option>
-                ))}
-              </select>
+                Mark Resolved
+              </button>
             )}
           </div>
         </div>
 
-        {/* Multi-Factor Priority Engine Breakdown Badge Bar */}
-        <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs font-mono">
-          <div className="border-r border-slate-800 pr-2">
-            <div className="text-[10px] text-slate-500 flex items-center gap-1"><BarChart2 className="w-3 h-3 text-cyan-400" /> COMPOSITE SCORE</div>
-            <div className="font-extrabold text-cyan-300 text-sm mt-0.5">{priorityInfo.compositeScore} / 4.0</div>
-            <div className="text-[9px] text-slate-400">P1 SLA Priority Threshold</div>
-          </div>
-
+        {/* Ticket Details Summary Bar */}
+        <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div>
-            <div className="text-[10px] text-slate-500 flex items-center gap-1"><Building className="w-3 h-3 text-purple-400" /> IMPACT (30%)</div>
-            <div className="font-bold text-slate-200 mt-0.5">Score: {priorityInfo.businessImpactScore}/4</div>
-            <div className="text-[9px] text-slate-400">Enterprise Service</div>
+            <span className="text-slate-500 block text-[10px] uppercase font-bold">Created By</span>
+            <span className="font-semibold text-slate-200">{incident.reporter}</span>
           </div>
-
           <div>
-            <div className="text-[10px] text-slate-500 flex items-center gap-1"><Users className="w-3 h-3 text-sky-400" /> USERS (25%)</div>
-            <div className="font-bold text-slate-200 mt-0.5">{incident.affectedUsersCount || 150} Users</div>
-            <div className="text-[9px] text-slate-400">Score: {priorityInfo.affectedUsersScore}/4</div>
+            <span className="text-slate-500 block text-[10px] uppercase font-bold">Category</span>
+            <span className="font-semibold text-slate-200">{incident.category || incident.affectedService}</span>
           </div>
-
           <div>
-            <div className="text-[10px] text-slate-500 flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-emerald-400" /> CRITICALITY (25%)</div>
-            <div className="font-bold text-slate-200 mt-0.5">Score: {priorityInfo.serviceCriticalityScore}/4</div>
-            <div className="text-[9px] text-slate-400">Executive SLA Service</div>
-          </div>
-
-          <div>
-            <div className="text-[10px] text-slate-500 flex items-center gap-1"><ShieldAlert className="w-3 h-3 text-rose-400" /> SEVERITY (20%)</div>
-            <div className="font-bold text-rose-400 mt-0.5">{incident.severity}</div>
-            <div className="text-[9px] text-slate-400">Score: {priorityInfo.technicalSeverityScore}/4</div>
+            <span className="text-slate-500 block text-[10px] uppercase font-bold">Assigned Agent</span>
+            <span className="font-semibold text-cyan-300">{incident.assignedTechnician || 'Support Desk'}</span>
           </div>
         </div>
-
       </div>
 
-      {/* Interactive Step-by-Step Pipeline Navigation Bar */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl glass-panel border-slate-800 overflow-x-auto">
-        {steps.map((step) => {
-          const Icon = step.icon;
-          const isActive = activeStep === step.id;
-
-          return (
-            <button
-              key={step.id}
-              onClick={() => setActiveStep(step.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                isActive 
-                  ? 'bg-gradient-to-r from-cyan-500 to-sky-600 text-white shadow-glow-cyan' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{step.label}</span>
-            </button>
-          );
-        })}
+      {/* Description Box */}
+      <div className="p-6 rounded-2xl glass-panel border-slate-800 space-y-3">
+        <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Ticket Description</h2>
+        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-sm text-slate-200 leading-relaxed">
+          {incident.description}
+        </div>
       </div>
 
-      {/* Step Content Render */}
-      <div className="mt-4">
-        {activeStep === 'telemetry' && <TelemetryPanel telemetry={incident.deviceTelemetry} />}
-        {activeStep === 'diagnostics' && (
-          <DiagnosticRulesPanel 
-            incident={incident}
-            results={incident.diagnosticResults} 
-            onReRunDiagnostics={onReRunDiagnostics} 
-          />
-        )}
-        {/* {activeStep === 'ai-copilot' && <AICopilotPanel incident={incident} />} */}
-        {activeStep === 'rag-similar' && <SimilarIncidentsPanel incident={incident} />}
-        {activeStep === 'action-runner' && (
-          <ActionApprovalTerminal 
-            playbooks={incident.recommendedPlaybooks} 
-            executionHistory={incident.executionHistory}
-            onExecuteAction={(action, approver) => onExecutePlaybook(action, approver)}
-          />
-        )}
-        {activeStep === 'audit-trail' && <AuditTrailPanel auditTrail={incident.auditTrail} />}
-      </div>
-
-      {/* Reopen Closed Ticket Modal */}
-      {showReopenModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleConfirmReopen} className="bg-[#0d131f] border border-rose-500/40 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
-            <div className="flex items-center gap-2 text-rose-400">
-              <RotateCcw className="w-5 h-5" />
-              <h3 className="text-base font-bold text-slate-100">Explicit Reopening Justification Required</h3>
+      {/* AI Troubleshooting Assistant Button */}
+      <div className="p-6 rounded-2xl glass-panel border-purple-500/30 bg-gradient-to-r from-purple-950/20 via-slate-900 to-slate-900 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 font-bold">
+              ✨
             </div>
-
-            <p className="text-xs text-slate-300">
-              Ticket <strong className="text-cyan-300 font-mono">{incident.ticketNumber}</strong> is currently <strong>CLOSED</strong>. To prevent accidental state modification, enter a formal reopening reason for compliance audit logging:
-            </p>
-
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Reopening Reason</label>
-              <textarea
-                value={reopenReason}
-                onChange={(e) => setReopenReason(e.target.value)}
-                rows={3}
-                placeholder="e.g., Symptom recurred after workstation reboot. Re-opening for root cause investigation."
-                required
-                className="w-full glass-input text-xs p-3 rounded-xl border-slate-700"
-              />
+              <h3 className="text-sm font-bold text-purple-200">{t('aiDiagnosis')}</h3>
+              <p className="text-xs text-slate-400">Get instant 1-click troubleshooting advice in plain English</p>
             </div>
+          </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowReopenModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs font-extrabold shadow-glow-rose"
-              >
-                Reopen Ticket & Log Audit Event
-              </button>
-            </div>
-          </form>
+          <button
+            onClick={() => setShowAiAdvice(!showAiAdvice)}
+            className="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs transition-all shadow-glow-purple"
+          >
+            {showAiAdvice ? 'Hide Advice' : '✨ Show AI Advice'}
+          </button>
         </div>
-      )}
+
+        {showAiAdvice && (
+          <div className="p-4 rounded-xl bg-slate-950/90 border border-purple-500/30 space-y-3 text-xs text-slate-200 animate-fadeIn">
+            <div className="font-bold text-purple-300 flex items-center gap-2">
+              <span>Suggested Solution Steps:</span>
+            </div>
+            <ul className="list-disc list-inside space-y-1.5 text-slate-300 leading-relaxed">
+              <li>Check hardware cables and confirm device power is ON.</li>
+              <li>Restart the application or service on your device.</li>
+              <li>If the issue continues, request assistance from the assigned support agent.</li>
+            </ul>
+            {incident.aiAnalysis?.primaryHypothesis?.recommendedFix && (
+              <div className="p-3 rounded-lg bg-purple-950/40 border border-purple-800/50 text-purple-200 mt-2">
+                <strong>Specific Advice:</strong> {incident.aiAnalysis.primaryHypothesis.recommendedFix}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Discussion & Replies Thread */}
+      <div className="p-6 rounded-2xl glass-panel border-slate-800 space-y-4">
+        <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">{t('communicationStream')}</h2>
+
+        <div className="bg-[#05080f] rounded-xl p-4 border border-slate-800 space-y-3 max-h-80 overflow-y-auto">
+          {comments.length === 0 ? (
+            <div className="text-center py-6 text-xs text-slate-500">
+              No replies yet. Type a message below to post an update.
+            </div>
+          ) : (
+            comments.map((cmt) => (
+              <div key={cmt.id} className={`flex items-start gap-3 text-xs ${cmt.authorRole === 'TECHNICIAN' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`p-4 rounded-xl max-w-lg leading-relaxed ${
+                  cmt.authorRole === 'TECHNICIAN'
+                    ? 'bg-cyan-600 text-white font-medium rounded-tr-none'
+                    : 'bg-slate-900 text-slate-200 border border-slate-800 rounded-tl-none'
+                }`}>
+                  <div className="flex items-center justify-between gap-3 text-[10px] opacity-80 font-mono mb-1">
+                    <span>{cmt.authorName}</span>
+                    <span>{cmt.timestamp}</span>
+                  </div>
+                  <p>{cmt.content}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Add Reply Form */}
+        <form onSubmit={handleSendComment} className="flex gap-2">
+          <input
+            type="text"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder={t('typeMessage')}
+            className="flex-1 glass-input text-xs px-4 py-3 rounded-xl border-slate-700/80 focus:outline-none focus:border-cyan-500/50"
+          />
+          <button
+            type="submit"
+            className="px-5 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-glow-cyan transition-all shrink-0"
+          >
+            {t('send')}
+          </button>
+        </form>
+      </div>
 
     </div>
   );

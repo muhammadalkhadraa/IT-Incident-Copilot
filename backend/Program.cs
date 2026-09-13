@@ -16,12 +16,21 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 
-// Configure PostgreSQL with EF Core pgvector extension
-var connString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Host=localhost;Database=it_copilot;Username=postgres;Password=copilot_secure_pass_2026";
+// Configure Database Provider (Defaults to zero-config local SQLite database it_copilot.db)
+var dbProvider = builder.Configuration["DbProvider"] ?? "Sqlite";
+var connString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connString));
+if (dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(connString))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connString));
+}
+else
+{
+    var dbPath = Path.Combine(AppContext.BaseDirectory, "it_copilot.db");
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite($"Data Source={dbPath}"));
+}
 
 // Register Extensible Diagnostic Test Plugins in DI
 builder.Services.AddScoped<IDiagnosticTest, PingGatewayTest>();

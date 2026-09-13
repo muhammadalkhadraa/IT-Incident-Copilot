@@ -150,9 +150,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
             {mode === 'FORGOT_PASSWORD' ? t('authTitleForgot') : mode === 'REGISTER' ? t('authTitleRegister') : t('authTitleLogin')}
           </h2>
           <p className="text-xs text-slate-400">
-            {mode === 'LOGIN' ? 'Sign in to access your enterprise dashboard' :
-             mode === 'REGISTER' ? 'Create a new account with BCrypt database security' :
-             'Enter your registered email and your new password'}
+            {mode === 'LOGIN' ? 'Sign in to manage and view support tickets' :
+             mode === 'REGISTER' ? 'Create a new account to access support' :
+             'Enter your registered email address to reset your password'}
           </p>
         </div>
 

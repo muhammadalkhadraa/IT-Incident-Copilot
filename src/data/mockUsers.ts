@@ -2,6 +2,15 @@ import type { UserProfile } from '../types';
 
 export const MOCK_USERS: UserProfile[] = [
   {
+    id: 'user-muhammad-00',
+    name: 'Muhammad Alkhadraa',
+    email: 'alkhadraamuhammad@gmail.com',
+    role: 'ADMINISTRATOR',
+    avatar: 'MA',
+    department: 'Enterprise IT & Admin',
+    title: 'Lead Administrator',
+  },
+  {
     id: 'user-emp-01',
     name: 'Sarah Connor',
     email: 'sarah.connor@corp.internal',

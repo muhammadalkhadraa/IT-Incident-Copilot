@@ -240,6 +240,18 @@ function getStoredAccounts(): StoredAccount[] {
   return [
     {
       user: {
+        id: 'usr-muhammad-00',
+        name: 'Muhammad Alkhadraa',
+        email: 'alkhadraamuhammad@gmail.com',
+        role: 'ADMINISTRATOR',
+        department: 'Enterprise IT & Management',
+        title: 'Lead Administrator',
+        avatar: 'MA'
+      },
+      passwordHash: 'Password123!'
+    },
+    {
+      user: {
         id: 'usr-alex-01',
         name: 'Alex Thorne',
         email: 'alex.thorne@corp.internal',
@@ -387,27 +399,35 @@ export const apiService = {
    * Login user via ASP.NET Core auth controller with BCrypt verification
    */
   async login(email: string, password: string): Promise<AuthResponse> {
+    const cleanEmail = email.trim().toLowerCase();
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: cleanEmail, password })
       });
       if (res.ok) {
-        return await res.json();
+        const authData: AuthResponse = await res.json();
+        const accounts = getStoredAccounts();
+        if (!accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
+          accounts.push({ user: authData.user, passwordHash: password });
+          saveStoredAccounts(accounts);
+        }
+        return authData;
       }
-      if (res.status === 401) {
-        throw new Error('Invalid email or password credentials.');
+      if (res.status === 401 || res.status === 400) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Invalid email or password credentials.');
       }
     } catch (err: any) {
-      if (err.message && err.message.includes('Invalid email')) {
+      if (err.message && (err.message.includes('Invalid email') || err.message.includes('credentials') || err.message.includes('password'))) {
         throw err;
       }
     }
 
-    // Fallback authentication for Vercel cloud deployment (Works on ANY device globally)
+    // Fallback authentication for offline mode
     const accounts = getStoredAccounts();
-    const target = accounts.find(a => a.user.email.toLowerCase() === email.toLowerCase());
+    const target = accounts.find(a => a.user.email.trim().toLowerCase() === cleanEmail);
 
     if (!target) {
       throw new Error('Invalid email or password credentials.');
@@ -418,49 +438,58 @@ export const apiService = {
     }
 
     return {
-      accessToken: `jwt-token-vercel-${Date.now()}`,
-      refreshToken: `ref-token-vercel-${Date.now()}`,
+      accessToken: `jwt-token-local-${Date.now()}`,
+      refreshToken: `ref-token-local-${Date.now()}`,
       user: target.user
     };
   },
 
   /**
-   * Register new user account (Persists globally on Vercel for ANY device)
+   * Register new user account (Persists in Backend Database & Local Store)
    */
   async register(name: string, email: string, password: string, role: string = 'EMPLOYEE'): Promise<AuthResponse> {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+
     try {
       const res = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role })
+        body: JSON.stringify({ name: cleanName, email: cleanEmail, password, role })
       });
       if (res.ok) {
-        return await res.json();
+        const authData: AuthResponse = await res.json();
+        const accounts = getStoredAccounts();
+        if (!accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
+          accounts.push({ user: authData.user, passwordHash: password });
+          saveStoredAccounts(accounts);
+        }
+        return authData;
       }
-      if (res.status === 400) {
+      if (res.status === 400 || res.status === 409) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Registration failed.');
+        throw new Error(err.message || 'An account with this email address already exists. Please sign in instead.');
       }
     } catch (err: any) {
-      if (err.message && (err.message.includes('already exists') || err.message.includes('failed'))) {
+      if (err.message && (err.message.includes('already exists') || err.message.includes('required') || err.message.includes('at least 8') || err.message.includes('failed') || err.message.includes('Registration'))) {
         throw err;
       }
     }
 
-    // Persistent registration for Vercel cloud deployment (Works on ANY device in the world!)
+    // Persistent registration for offline mode / Vercel cloud deployment
     const accounts = getStoredAccounts();
-    if (accounts.some(a => a.user.email.toLowerCase() === email.toLowerCase())) {
-      throw new Error('An account with this email address already exists.');
+    if (accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
+      throw new Error('An account with this email address already exists. Please sign in instead.');
     }
 
     const newUser: UserProfile = {
       id: `usr-${Date.now()}`,
-      name,
-      email,
+      name: cleanName,
+      email: cleanEmail,
       role: role as any,
       department: role === 'EMPLOYEE' ? 'General Operations' : 'IT Engineering',
       title: role === 'EMPLOYEE' ? 'Staff Member' : 'Systems Developer',
-      avatar: name.split(' ').map(n => n[0]).join('').toUpperCase() || 'US'
+      avatar: cleanName.split(' ').map(n => n[0]).join('').toUpperCase() || 'US'
     };
 
     accounts.push({
@@ -471,8 +500,8 @@ export const apiService = {
     saveStoredAccounts(accounts);
 
     return {
-      accessToken: `jwt-token-vercel-${Date.now()}`,
-      refreshToken: `ref-token-vercel-${Date.now()}`,
+      accessToken: `jwt-token-local-${Date.now()}`,
+      refreshToken: `ref-token-local-${Date.now()}`,
       user: newUser
     };
   },

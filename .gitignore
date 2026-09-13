@@ -23,3 +23,6 @@ telemetry_offline_buffer.json
 .env.local
 
 .vercel
+*.db
+*.db-shm
+*.db-wal

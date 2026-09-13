@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Incident, UserProfile, PlaybookAction, ActionExecutionResult, UserRole } from './types';
+import type { Incident, UserProfile, UserRole } from './types';
 import { INITIAL_INCIDENTS } from './data/mockData';
 import { MOCK_USERS as INITIAL_USERS } from './data/mockUsers';
 import { Header } from './components/Header';
@@ -368,25 +368,8 @@ export function App() {
                     incident={selectedIncident}
                     onBack={() => setSelectedIncidentId(null)}
                     onUpdateStatus={handleUpdateStatus}
-                    onExecutePlaybook={async (action: PlaybookAction, approverName?: string) => {
-                      if (!selectedIncidentId) return;
-                      const log: ActionExecutionResult = {
-                        actionId: action.code,
-                        executedBy: approverName || currentUser.name,
-                        startedAt: new Date().toISOString(),
-                        completedAt: new Date().toISOString(),
-                        success: true,
-                        outputLog: `[EXECUTION OK] ${action.code} executed successfully by ${approverName || currentUser.name}.`,
-                        exitCode: 0
-                      };
-                      setIncidents(prev => prev.map(i => i.id === selectedIncidentId ? {
-                        ...i,
-                        executionHistory: [log, ...i.executionHistory]
-                      } : i));
-                    }}
-                    onReRunDiagnostics={() => {
-                      alert('Re-running diagnostic rule framework...');
-                    }}
+                    onExecutePlaybook={async () => {}}
+                    onReRunDiagnostics={() => {}}
                   />
                 ) : (
                   <IncidentList
@@ -395,37 +378,18 @@ export function App() {
                     onSelectIncident={(id) => setSelectedIncidentId(id)}
                     onNewIncidentClick={() => setActiveView('employee-portal')}
                     searchQuery={searchQuery}
-                    onAcceptTicket={(id) => handleUpdateStatus(id, 'DIAGNOSING')}
                   />
                 )
               )}
 
-              {/* Diagnostics, Copilot & Similar Incidents inside Workstation */}
+              {/* Workstation Fallback */}
               {(activeView === 'diagnostics' || activeView === 'copilot' || activeView === 'similar') && (
                 <IncidentWorkstation
                   incident={selectedIncident || incidents[0]}
                   onBack={() => setActiveView('incidents')}
                   onUpdateStatus={handleUpdateStatus}
-                  onExecutePlaybook={async (action: PlaybookAction, approverName?: string) => {
-                    const targetId = selectedIncidentId || incidents[0]?.id;
-                    if (!targetId) return;
-                    const log: ActionExecutionResult = {
-                      actionId: action.code,
-                      executedBy: approverName || currentUser.name,
-                      startedAt: new Date().toISOString(),
-                      completedAt: new Date().toISOString(),
-                      success: true,
-                      outputLog: `[EXECUTION OK] ${action.code} executed successfully by ${approverName || currentUser.name}.`,
-                      exitCode: 0
-                    };
-                    setIncidents(prev => prev.map(i => i.id === targetId ? {
-                      ...i,
-                      executionHistory: [log, ...i.executionHistory]
-                    } : i));
-                  }}
-                  onReRunDiagnostics={() => {
-                    alert('Re-running diagnostic rule framework...');
-                  }}
+                  onExecutePlaybook={async () => {}}
+                  onReRunDiagnostics={() => {}}
                 />
               )}
 
