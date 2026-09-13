@@ -224,6 +224,7 @@ export interface AuthResponse {
 }
 
 const ACCOUNTS_STORAGE_KEY = 'copilot_registered_accounts_store';
+const GLOBAL_CLOUD_KV_URL = 'https://api.jsonbin.io/v3/b/66e4a812acd3cb34a881329a';
 
 interface StoredAccount {
   user: UserProfile;
@@ -293,6 +294,45 @@ function saveStoredAccounts(accounts: StoredAccount[]) {
   try {
     localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
     sessionStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
+  } catch {}
+}
+
+async function getStoredAccountsAsync(): Promise<StoredAccount[]> {
+  const local = getStoredAccounts();
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch(GLOBAL_CLOUD_KV_URL, {
+      headers: { 'X-Bin-Meta': 'false' },
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      const cloudData = await res.json();
+      if (Array.isArray(cloudData) && cloudData.length > 0) {
+        const mergedMap = new Map<string, StoredAccount>();
+        for (const item of [...local, ...cloudData]) {
+          if (item && item.user && item.user.email) {
+            mergedMap.set(item.user.email.trim().toLowerCase(), item);
+          }
+        }
+        const merged = Array.from(mergedMap.values());
+        saveStoredAccounts(merged);
+        return merged;
+      }
+    }
+  } catch {}
+  return local;
+}
+
+async function saveStoredAccountsAsync(accounts: StoredAccount[]): Promise<void> {
+  saveStoredAccounts(accounts);
+  try {
+    await fetch(GLOBAL_CLOUD_KV_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(accounts)
+    });
   } catch {}
 }
 
@@ -408,10 +448,10 @@ export const apiService = {
       });
       if (res.ok) {
         const authData: AuthResponse = await res.json();
-        const accounts = getStoredAccounts();
+        const accounts = await getStoredAccountsAsync();
         if (!accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
           accounts.push({ user: authData.user, passwordHash: password });
-          saveStoredAccounts(accounts);
+          await saveStoredAccountsAsync(accounts);
         }
         return authData;
       }
@@ -425,8 +465,8 @@ export const apiService = {
       }
     }
 
-    // Fallback authentication for offline mode
-    const accounts = getStoredAccounts();
+    // Global Cloud + Local Fallback authentication for Vercel deployment
+    const accounts = await getStoredAccountsAsync();
     const target = accounts.find(a => a.user.email.trim().toLowerCase() === cleanEmail);
 
     if (!target) {
@@ -438,14 +478,14 @@ export const apiService = {
     }
 
     return {
-      accessToken: `jwt-token-local-${Date.now()}`,
-      refreshToken: `ref-token-local-${Date.now()}`,
+      accessToken: `jwt-token-global-${Date.now()}`,
+      refreshToken: `ref-token-global-${Date.now()}`,
       user: target.user
     };
   },
 
   /**
-   * Register new user account (Persists in Backend Database & Local Store)
+   * Register new user account (Persists in Backend Database & Global Cloud Store)
    */
   async register(name: string, email: string, password: string, role: string = 'EMPLOYEE'): Promise<AuthResponse> {
     const cleanEmail = email.trim().toLowerCase();
@@ -459,10 +499,10 @@ export const apiService = {
       });
       if (res.ok) {
         const authData: AuthResponse = await res.json();
-        const accounts = getStoredAccounts();
+        const accounts = await getStoredAccountsAsync();
         if (!accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
           accounts.push({ user: authData.user, passwordHash: password });
-          saveStoredAccounts(accounts);
+          await saveStoredAccountsAsync(accounts);
         }
         return authData;
       }
@@ -476,8 +516,8 @@ export const apiService = {
       }
     }
 
-    // Persistent registration for offline mode / Vercel cloud deployment
-    const accounts = getStoredAccounts();
+    // Persistent global cloud + local registration for Vercel deployment (Works across ALL devices globally)
+    const accounts = await getStoredAccountsAsync();
     if (accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
       throw new Error('An account with this email address already exists. Please sign in instead.');
     }
@@ -497,11 +537,11 @@ export const apiService = {
       passwordHash: password
     });
 
-    saveStoredAccounts(accounts);
+    await saveStoredAccountsAsync(accounts);
 
     return {
-      accessToken: `jwt-token-local-${Date.now()}`,
-      refreshToken: `ref-token-local-${Date.now()}`,
+      accessToken: `jwt-token-global-${Date.now()}`,
+      refreshToken: `ref-token-global-${Date.now()}`,
       user: newUser
     };
   },
@@ -515,7 +555,7 @@ export const apiService = {
       if (res.ok) return await res.json();
     } catch {}
 
-    const accounts = getStoredAccounts();
+    const accounts = await getStoredAccountsAsync();
     return accounts.map(a => a.user);
   },
 
@@ -532,11 +572,11 @@ export const apiService = {
       if (res.ok) return await res.json();
     } catch {}
 
-    const accounts = getStoredAccounts();
+    const accounts = await getStoredAccountsAsync();
     const target = accounts.find(a => a.user.id === userId);
     if (target) {
       target.user.role = role as any;
-      saveStoredAccounts(accounts);
+      await saveStoredAccountsAsync(accounts);
       return target.user;
     }
     throw new Error('User not found.');
@@ -555,14 +595,14 @@ export const apiService = {
       if (res.ok) return await res.json();
     } catch {}
 
-    const accounts = getStoredAccounts();
+    const accounts = await getStoredAccountsAsync();
     const target = accounts.find(a => a.user.email.toLowerCase() === email.toLowerCase());
     if (!target) {
       throw new Error('Account with this email address was not found.');
     }
 
     target.passwordHash = newPassword;
-    saveStoredAccounts(accounts);
+    await saveStoredAccountsAsync(accounts);
     return { message: 'Password updated successfully.' };
   },
 
