@@ -183,20 +183,8 @@ export function App() {
     });
   };
 
-  // Filter incidents for current user persona:
-  // Standard Users (EMPLOYEE) see ONLY their own tickets
-  // Developers / Technicians / Admins see ALL tickets across the enterprise
-  const isDeveloperOrAdmin = currentUser.role === 'TECHNICIAN' || currentUser.role === 'IT_MANAGER' || currentUser.role === 'ADMINISTRATOR';
-
-  const userVisibleIncidents = isDeveloperOrAdmin
-    ? incidents
-    : incidents.filter(i => {
-        if (!i.reporter) return false;
-        const rep = i.reporter.toLowerCase();
-        const uName = currentUser.name.toLowerCase();
-        const uFirstName = uName.split(' ')[0];
-        return (i.reporterId && i.reporterId === currentUser.id) || rep === uName || (uFirstName.length > 2 && rep.includes(uFirstName));
-      });
+  // All database tickets are visible across the enterprise helpdesk table view
+  const userVisibleIncidents = incidents;
 
   if (!isAuthenticated) {
     return (
