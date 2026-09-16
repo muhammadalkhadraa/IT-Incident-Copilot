@@ -10,7 +10,22 @@ import type {
 import { PLAYBOOK_LIBRARY } from '../data/mockData';
 import { DiagnosticEngine } from './diagnosticEngine';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const isLocalhost = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || (isLocalhost ? 'http://localhost:5000/api' : null);
+
+async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  if (!API_BASE_URL) {
+    throw new Error('Local API requests disabled on remote host to prevent PNA browser blocks.');
+  }
+  const fullOptions: RequestInit = {
+    // @ts-ignore - Chrome Private Network Access (PNA) spec option
+    targetAddressSpace: 'local',
+    ...options
+  };
+  return fetch(url, fullOptions);
+}
 
 export interface DiagnosticResultDto {
   ruleCode: string;
@@ -290,7 +305,7 @@ export const apiService = {
    */
   async fetchIncidents(): Promise<Incident[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/incidents`);
+      const res = await safeFetch(`${API_BASE_URL}/incidents`);
       if (res.ok) {
         const data: IncidentResponseDto[] = await res.json();
         return data.map(mapDtoToIncident);
@@ -299,12 +314,13 @@ export const apiService = {
     return [];
   },
 
+
   /**
    * Post a new incident to ASP.NET Core backend API (Persisted to Database)
    */
   async createIncident(payload: CreateIncidentPayload): Promise<Incident> {
     try {
-      const res = await fetch(`${API_BASE_URL}/incidents`, {
+      const res = await safeFetch(`${API_BASE_URL}/incidents`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -346,7 +362,7 @@ export const apiService = {
    */
   async addComment(incidentId: string, content: string, authorName: string, authorRole: string): Promise<IncidentCommentDto> {
     try {
-      const res = await fetch(`${API_BASE_URL}/incidents/${incidentId}/comments`, {
+      const res = await safeFetch(`${API_BASE_URL}/incidents/${incidentId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -377,7 +393,7 @@ export const apiService = {
    */
   async updateIncidentStatus(id: string, newStatus: string): Promise<Incident> {
     try {
-      const res = await fetch(`${API_BASE_URL}/incidents/${id}/status`, {
+      const res = await safeFetch(`${API_BASE_URL}/incidents/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -407,14 +423,13 @@ export const apiService = {
     return mapDtoToIncident(mockDto);
   },
 
-
   /**
    * Login user via ASP.NET Core auth controller with BCrypt verification
    */
   async login(email: string, password: string): Promise<AuthResponse> {
     const cleanEmail = email.trim().toLowerCase();
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      const res = await safeFetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, password })
@@ -464,7 +479,7 @@ export const apiService = {
     const cleanName = name.trim();
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      const res = await safeFetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: cleanName, email: cleanEmail, password, role })
@@ -522,7 +537,7 @@ export const apiService = {
    */
   async fetchUsers(): Promise<UserProfile[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/users`);
+      const res = await safeFetch(`${API_BASE_URL}/auth/users`);
       if (res.ok) return await res.json();
     } catch {}
 
@@ -535,7 +550,7 @@ export const apiService = {
    */
   async updateUserRole(userId: string, role: string): Promise<UserProfile> {
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/users/${userId}/role`, {
+      const res = await safeFetch(`${API_BASE_URL}/auth/users/${userId}/role`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role })
@@ -558,7 +573,7 @@ export const apiService = {
    */
   async resetPassword(email: string, newPassword: string): Promise<{ message: string }> {
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      const res = await safeFetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, newPassword })
@@ -577,4 +592,5 @@ export const apiService = {
     return { message: 'Password updated successfully.' };
   }
 };
+
 
