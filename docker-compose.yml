@@ -32,7 +32,7 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DefaultConnection: "Host=db;Database=it_copilot;Username=postgres;Password=copilot_secure_pass_2026"
+      ConnectionStrings__DefaultConnection: "Host=db.dczjdtvyzdwjszyzfeye.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=112233445566778899mm;SSL Mode=Require;Trust Server Certificate=true"
       Jwt__SecretKey: "SuperSecretKey_IT_Incident_Copilot_Enterprise_Jwt_2026!#"
       Jwt__Issuer: "ITIncidentCopilotApi"
       Jwt__Audience: "ITIncidentCopilotClient"

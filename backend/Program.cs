@@ -19,7 +19,7 @@ builder.Services.AddEndpointsApiExplorer();
 // Configure Database Provider (Primary: PostgreSQL for DBeaver & SQL tools; Fallback: SQLite)
 var dbProvider = builder.Configuration["DbProvider"] ?? "PostgreSQL";
 var connString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Host=localhost;Database=it_copilot;Username=postgres;Password=copilot_secure_pass_2026";
+    ?? "Host=db.dczjdtvyzdwjszyzfeye.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=112233445566778899mm;SSL Mode=Require;Trust Server Certificate=true";
 
 if (dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
 {
