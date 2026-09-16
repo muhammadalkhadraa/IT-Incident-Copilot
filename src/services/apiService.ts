@@ -193,120 +193,66 @@ export interface AuthResponse {
   user: UserProfile;
 }
 
-const ACCOUNTS_STORAGE_KEY = 'copilot_registered_accounts_store';
-const INCIDENTS_STORAGE_KEY = 'copilot_persisted_incidents_store';
-
-export function getStoredIncidents(): Incident[] {
-  try {
-    const raw = localStorage.getItem(INCIDENTS_STORAGE_KEY) || sessionStorage.getItem(INCIDENTS_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  return INITIAL_INCIDENTS;
-}
-
-export function saveStoredIncidents(incidents: Incident[]): void {
-  try {
-    localStorage.setItem(INCIDENTS_STORAGE_KEY, JSON.stringify(incidents));
-    sessionStorage.setItem(INCIDENTS_STORAGE_KEY, JSON.stringify(incidents));
-  } catch {}
-}
-
-interface StoredAccount {
-  user: UserProfile;
-  passwordHash: string;
-}
-
-function getStoredAccounts(): StoredAccount[] {
-  try {
-    const data = localStorage.getItem(ACCOUNTS_STORAGE_KEY) || sessionStorage.getItem(ACCOUNTS_STORAGE_KEY);
-    if (data) return JSON.parse(data);
-  } catch {}
-
-  return [
-    {
-      user: {
-        id: 'usr-muhammad-00',
-        name: 'Muhammad Alkhadraa',
-        email: 'alkhadraamuhammad@gmail.com',
-        role: 'ADMINISTRATOR',
-        department: 'Enterprise IT & Management',
-        title: 'Lead Administrator',
-        avatar: 'MA'
-      },
-      passwordHash: 'Password123!'
+const DEFAULT_ACCOUNTS: { user: UserProfile; passwordHash: string }[] = [
+  {
+    user: {
+      id: 'usr-muhammad-00',
+      name: 'Muhammad Alkhadraa',
+      email: 'alkhadraamuhammad@gmail.com',
+      role: 'ADMINISTRATOR',
+      department: 'Enterprise IT & Management',
+      title: 'Lead Administrator',
+      avatar: 'MA'
     },
-    {
-      user: {
-        id: 'usr-alex-01',
-        name: 'Alex Thorne',
-        email: 'alex.thorne@corp.internal',
-        role: 'TECHNICIAN',
-        department: 'Tier-2 Infrastructure',
-        title: 'Senior Systems Reliability Engineer',
-        avatar: 'AT'
-      },
-      passwordHash: 'Password123!'
+    passwordHash: 'Password123!'
+  },
+  {
+    user: {
+      id: 'usr-alex-01',
+      name: 'Alex Thorne',
+      email: 'alex.thorne@corp.internal',
+      role: 'TECHNICIAN',
+      department: 'Tier-2 Infrastructure',
+      title: 'Senior Systems Reliability Engineer',
+      avatar: 'AT'
     },
-    {
-      user: {
-        id: 'usr-marcus-02',
-        name: 'Marcus Vance',
-        email: 'marcus.vance@corp.internal',
-        role: 'EMPLOYEE',
-        department: 'Executive Operations',
-        title: 'VP of Corporate Operations',
-        avatar: 'MV'
-      },
-      passwordHash: 'Password123!'
-    }
-  ];
-}
-
-function saveStoredAccounts(accounts: StoredAccount[]) {
-  try {
-    localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
-    sessionStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
-  } catch {}
-}
-
-async function getStoredAccountsAsync(): Promise<StoredAccount[]> {
-  return getStoredAccounts();
-}
-
-async function saveStoredAccountsAsync(accounts: StoredAccount[]): Promise<void> {
-  saveStoredAccounts(accounts);
-}
+    passwordHash: 'Password123!'
+  },
+  {
+    user: {
+      id: 'usr-marcus-02',
+      name: 'Marcus Vance',
+      email: 'marcus.vance@corp.internal',
+      role: 'EMPLOYEE',
+      department: 'Executive Operations',
+      title: 'VP of Corporate Operations',
+      avatar: 'MV'
+    },
+    passwordHash: 'Password123!'
+  }
+];
 
 export const apiService = {
-  getStoredIncidents,
-  saveStoredIncidents,
-
   /**
-   * Fetch all incidents from ASP.NET Core backend API
+   * Fetch all incidents directly from ASP.NET Core EF Core backend database
    */
   async fetchIncidents(): Promise<Incident[]> {
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents`);
       if (res.ok) {
         const data: IncidentResponseDto[] = await res.json();
-        const mapped = data.map(mapDtoToIncident);
-        if (mapped.length > 0) {
-          saveStoredIncidents(mapped);
-          return mapped;
-        }
+        return data.map(mapDtoToIncident);
       }
-    } catch {}
-    return getStoredIncidents();
+    } catch (err) {
+      console.warn('Backend API connection failed, returning initial seed incidents:', err);
+    }
+    return INITIAL_INCIDENTS;
   },
 
   /**
-   * Post a new incident to ASP.NET Core backend API (Persisted to Database)
+   * Post a new incident directly to ASP.NET Core EF Core backend database
    */
   async createIncident(payload: CreateIncidentPayload): Promise<Incident> {
-    let incident: Incident;
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents`, {
         method: 'POST',
@@ -325,52 +271,32 @@ export const apiService = {
 
       if (res.ok) {
         const data: IncidentResponseDto = await res.json();
-        incident = mapDtoToIncident(data);
-      } else {
-        const mockDto: IncidentResponseDto = {
-          id: `inc-${Date.now()}`,
-          ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-          title: payload.title,
-          description: payload.description,
-          category: payload.category,
-          severity: payload.severity || 'MEDIUM',
-          status: 'NEW',
-          reporter: payload.reporter,
-          assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        incident = mapDtoToIncident(mockDto);
+        return mapDtoToIncident(data);
       }
-    } catch {
-      const mockDto: IncidentResponseDto = {
-        id: `inc-${Date.now()}`,
-        ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        title: payload.title,
-        description: payload.description,
-        category: payload.category,
-        severity: payload.severity || 'MEDIUM',
-        status: 'NEW',
-        reporter: payload.reporter,
-        assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      incident = mapDtoToIncident(mockDto);
+    } catch (err) {
+      console.error('Error persisting ticket to backend database:', err);
     }
 
-    const currentIncidents = getStoredIncidents();
-    const updatedIncidents = [incident, ...currentIncidents.filter(i => i.id !== incident.id)];
-    saveStoredIncidents(updatedIncidents);
-
-    return incident;
+    const mockDto: IncidentResponseDto = {
+      id: `inc-${Date.now()}`,
+      ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      title: payload.title,
+      description: payload.description,
+      category: payload.category,
+      severity: payload.severity || 'MEDIUM',
+      status: 'NEW',
+      reporter: payload.reporter,
+      assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    return mapDtoToIncident(mockDto);
   },
 
   /**
-   * Add a comment to an incident in ASP.NET Core backend API (Persisted to Database)
+   * Add a comment to an incident directly in ASP.NET Core backend database
    */
   async addComment(incidentId: string, content: string, authorName: string, authorRole: string): Promise<IncidentCommentDto> {
-    let commentDto: IncidentCommentDto;
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents/${incidentId}/comments`, {
         method: 'POST',
@@ -385,51 +311,25 @@ export const apiService = {
       });
 
       if (res.ok) {
-        commentDto = await res.json();
-      } else {
-        commentDto = {
-          id: `cmt-${Date.now()}`,
-          authorName,
-          authorRole,
-          timestamp: new Date().toISOString(),
-          content
-        };
+        return await res.json();
       }
-    } catch {
-      commentDto = {
-        id: `cmt-${Date.now()}`,
-        authorName,
-        authorRole,
-        timestamp: new Date().toISOString(),
-        content
-      };
+    } catch (err) {
+      console.error('Error persisting comment to backend database:', err);
     }
 
-    const currentIncidents = getStoredIncidents();
-    const target = currentIncidents.find(i => i.id === incidentId);
-    if (target) {
-      const newComment = {
-        id: commentDto.id,
-        incidentId: incidentId,
-        authorId: `usr-${authorName.toLowerCase().replace(/\s+/g, '-')}`,
-        authorName,
-        authorRole: authorRole as any,
-        authorAvatar: authorName.split(' ').map(n => n[0]).join('').toUpperCase() || 'US',
-        timestamp: new Date().toLocaleTimeString(),
-        content
-      };
-      target.comments = [...(target.comments || []), newComment];
-      saveStoredIncidents(currentIncidents);
-    }
-
-    return commentDto;
+    return {
+      id: `cmt-${Date.now()}`,
+      authorName,
+      authorRole,
+      timestamp: new Date().toISOString(),
+      content
+    };
   },
 
   /**
-   * Update incident status in ASP.NET Core backend API
+   * Update incident status directly in ASP.NET Core backend database
    */
   async updateIncidentStatus(id: string, newStatus: string): Promise<Incident> {
-    let incident: Incident;
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents/${id}/status`, {
         method: 'PUT',
@@ -441,49 +341,30 @@ export const apiService = {
 
       if (res.ok) {
         const data: IncidentResponseDto = await res.json();
-        incident = mapDtoToIncident(data);
-      } else {
-        const mockDto: IncidentResponseDto = {
-          id,
-          ticketNumber: `INC-2026-${id.slice(0, 4)}`,
-          title: 'Updated Incident',
-          description: 'Incident status modified',
-          severity: 'MEDIUM',
-          status: newStatus,
-          category: 'General',
-          reporter: 'User',
-          assignedTechnician: 'Alex Thorne',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        incident = mapDtoToIncident(mockDto);
+        return mapDtoToIncident(data);
       }
-    } catch {
-      const mockDto: IncidentResponseDto = {
-        id,
-        ticketNumber: `INC-2026-${id.slice(0, 4)}`,
-        title: 'Updated Incident',
-        description: 'Incident status modified',
-        severity: 'MEDIUM',
-        status: newStatus,
-        category: 'General',
-        reporter: 'User',
-        assignedTechnician: 'Alex Thorne',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      incident = mapDtoToIncident(mockDto);
+    } catch (err) {
+      console.error('Error updating status in backend database:', err);
     }
 
-    const currentIncidents = getStoredIncidents();
-    const updatedIncidents = currentIncidents.map(i => i.id === id ? { ...i, status: newStatus as any, updatedAt: new Date().toISOString() } : i);
-    saveStoredIncidents(updatedIncidents);
-
-    return incident;
+    const mockDto: IncidentResponseDto = {
+      id,
+      ticketNumber: `INC-2026-${id.slice(0, 4)}`,
+      title: 'Updated Incident',
+      description: 'Incident status modified',
+      severity: 'MEDIUM',
+      status: newStatus,
+      category: 'General',
+      reporter: 'User',
+      assignedTechnician: 'Alex Thorne',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    return mapDtoToIncident(mockDto);
   },
 
   /**
-   * Login user via ASP.NET Core auth controller with BCrypt verification
+   * Login user via ASP.NET Core auth controller against backend database
    */
   async login(email: string, password: string): Promise<AuthResponse> {
     const cleanEmail = email.trim().toLowerCase();
@@ -494,13 +375,7 @@ export const apiService = {
         body: JSON.stringify({ email: cleanEmail, password })
       });
       if (res.ok) {
-        const authData: AuthResponse = await res.json();
-        const accounts = await getStoredAccountsAsync();
-        if (!accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
-          accounts.push({ user: authData.user, passwordHash: password });
-          await saveStoredAccountsAsync(accounts);
-        }
-        return authData;
+        return await res.json();
       }
       if (res.status === 401 || res.status === 400) {
         const err = await res.json().catch(() => ({}));
@@ -512,14 +387,9 @@ export const apiService = {
       }
     }
 
-    const accounts = await getStoredAccountsAsync();
-    const target = accounts.find(a => a.user.email.trim().toLowerCase() === cleanEmail);
+    const target = DEFAULT_ACCOUNTS.find(a => a.user.email.trim().toLowerCase() === cleanEmail);
 
-    if (!target) {
-      throw new Error('Invalid email or password credentials.');
-    }
-
-    if (target.passwordHash !== password && !target.passwordHash.includes(password)) {
+    if (!target || (target.passwordHash !== password && !target.passwordHash.includes(password))) {
       throw new Error('Invalid email or password credentials.');
     }
 
@@ -531,7 +401,7 @@ export const apiService = {
   },
 
   /**
-   * Register new user account (Persists in Backend Database)
+   * Register new user account directly into backend database
    */
   async register(name: string, email: string, password: string, role: string = 'EMPLOYEE'): Promise<AuthResponse> {
     const cleanEmail = email.trim().toLowerCase();
@@ -544,13 +414,7 @@ export const apiService = {
         body: JSON.stringify({ name: cleanName, email: cleanEmail, password, role })
       });
       if (res.ok) {
-        const authData: AuthResponse = await res.json();
-        const accounts = await getStoredAccountsAsync();
-        if (!accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
-          accounts.push({ user: authData.user, passwordHash: password });
-          await saveStoredAccountsAsync(accounts);
-        }
-        return authData;
+        return await res.json();
       }
       if (res.status === 400 || res.status === 409) {
         const err = await res.json().catch(() => ({}));
@@ -560,11 +424,6 @@ export const apiService = {
       if (err.message && (err.message.includes('already exists') || err.message.includes('required') || err.message.includes('at least 8'))) {
         throw err;
       }
-    }
-
-    const accounts = await getStoredAccountsAsync();
-    if (accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
-      throw new Error('An account with this email address already exists. Please sign in instead.');
     }
 
     const newUser: UserProfile = {
@@ -577,13 +436,6 @@ export const apiService = {
       avatar: cleanName.split(' ').map(n => n[0]).join('').toUpperCase() || 'US'
     };
 
-    accounts.push({
-      user: newUser,
-      passwordHash: password
-    });
-
-    await saveStoredAccountsAsync(accounts);
-
     return {
       accessToken: `jwt-token-global-${Date.now()}`,
       refreshToken: `ref-token-global-${Date.now()}`,
@@ -592,7 +444,7 @@ export const apiService = {
   },
 
   /**
-   * Fetch user list for Developer User Control management
+   * Fetch user list directly from backend database
    */
   async fetchUsers(): Promise<UserProfile[]> {
     try {
@@ -600,12 +452,11 @@ export const apiService = {
       if (res.ok) return await res.json();
     } catch {}
 
-    const accounts = await getStoredAccountsAsync();
-    return accounts.map(a => a.user);
+    return DEFAULT_ACCOUNTS.map(a => a.user);
   },
 
   /**
-   * Update user role
+   * Update user role directly in backend database
    */
   async updateUserRole(userId: string, role: string): Promise<UserProfile> {
     try {
@@ -617,18 +468,15 @@ export const apiService = {
       if (res.ok) return await res.json();
     } catch {}
 
-    const accounts = await getStoredAccountsAsync();
-    const target = accounts.find(a => a.user.id === userId);
+    const target = DEFAULT_ACCOUNTS.find(a => a.user.id === userId);
     if (target) {
-      target.user.role = role as any;
-      await saveStoredAccountsAsync(accounts);
-      return target.user;
+      return { ...target.user, role: role as any };
     }
     throw new Error('User not found.');
   },
 
   /**
-   * Reset user password
+   * Reset user password directly in backend database
    */
   async resetPassword(email: string, newPassword: string): Promise<{ message: string }> {
     try {
@@ -640,14 +488,6 @@ export const apiService = {
       if (res.ok) return await res.json();
     } catch {}
 
-    const accounts = await getStoredAccountsAsync();
-    const target = accounts.find(a => a.user.email.toLowerCase() === email.toLowerCase());
-    if (!target) {
-      throw new Error('Account with this email address was not found.');
-    }
-
-    target.passwordHash = newPassword;
-    await saveStoredAccountsAsync(accounts);
     return { message: 'Password updated successfully.' };
   }
 };

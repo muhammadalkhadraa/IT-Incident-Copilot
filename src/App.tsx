@@ -36,7 +36,7 @@ export function App() {
   });
 
   const [users, setUsers] = useState<UserProfile[]>(INITIAL_USERS);
-  const [incidents, setIncidents] = useState<Incident[]>(() => apiService.getStoredIncidents());
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -53,13 +53,6 @@ export function App() {
       sessionStorage.removeItem('copilot_view');
     }
   }, [isAuthenticated, currentUser, activeView]);
-
-  // Sync incidents to local storage whenever updated
-  useEffect(() => {
-    if (incidents && incidents.length > 0) {
-      apiService.saveStoredIncidents(incidents);
-    }
-  }, [incidents]);
 
   // Fetch initial incidents and user directory from ASP.NET Core backend API on mount
   useEffect(() => {
