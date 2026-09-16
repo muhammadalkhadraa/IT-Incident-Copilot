@@ -200,7 +200,6 @@ export interface AuthResponse {
 }
 
 const ACCOUNTS_STORAGE_KEY = 'copilot_registered_accounts_store';
-const GLOBAL_CLOUD_KV_URL = 'https://api.jsonbin.io/v3/b/66e4a812acd3cb34a881329a';
 
 interface StoredAccount {
   user: UserProfile;
@@ -261,42 +260,11 @@ function saveStoredAccounts(accounts: StoredAccount[]) {
 }
 
 async function getStoredAccountsAsync(): Promise<StoredAccount[]> {
-  const local = getStoredAccounts();
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch(GLOBAL_CLOUD_KV_URL, {
-      headers: { 'X-Bin-Meta': 'false' },
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (res.ok) {
-      const cloudData = await res.json();
-      if (Array.isArray(cloudData) && cloudData.length > 0) {
-        const mergedMap = new Map<string, StoredAccount>();
-        for (const item of [...local, ...cloudData]) {
-          if (item && item.user && item.user.email) {
-            mergedMap.set(item.user.email.trim().toLowerCase(), item);
-          }
-        }
-        const merged = Array.from(mergedMap.values());
-        saveStoredAccounts(merged);
-        return merged;
-      }
-    }
-  } catch {}
-  return local;
+  return getStoredAccounts();
 }
 
 async function saveStoredAccountsAsync(accounts: StoredAccount[]): Promise<void> {
   saveStoredAccounts(accounts);
-  try {
-    await fetch(GLOBAL_CLOUD_KV_URL, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(accounts)
-    });
-  } catch {}
 }
 
 export const apiService = {
