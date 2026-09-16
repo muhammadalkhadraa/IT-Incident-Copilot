@@ -183,8 +183,22 @@ export function App() {
     });
   };
 
-  // All database tickets are visible across the enterprise helpdesk table view
-  const userVisibleIncidents = incidents;
+  // Role-based Ticket Visibility:
+  // 1. Regular Users (EMPLOYEE): Can ONLY view their own ticket history.
+  // 2. Technicians, Admins & IT Managers: Can view all enterprise support tickets.
+  const isDeveloperOrAdmin = currentUser.role === 'TECHNICIAN' || currentUser.role === 'IT_MANAGER' || currentUser.role === 'ADMINISTRATOR';
+
+  const userVisibleIncidents = isDeveloperOrAdmin
+    ? incidents
+    : incidents.filter(i => {
+        if (i.reporterId && i.reporterId === currentUser.id) return true;
+        if (!i.reporter) return false;
+        const rep = i.reporter.trim().toLowerCase();
+        const uName = currentUser.name.trim().toLowerCase();
+        const uEmail = currentUser.email.trim().toLowerCase();
+        const uFirstName = uName.split(' ')[0];
+        return rep === uName || rep === uEmail || (uFirstName.length > 2 && rep.includes(uFirstName));
+      });
 
   if (!isAuthenticated) {
     return (
@@ -324,7 +338,7 @@ export function App() {
               {/* Workstation Fallback */}
               {(activeView === 'diagnostics' || activeView === 'copilot' || activeView === 'similar') && (
                 <IncidentWorkstation
-                  incident={selectedIncident || incidents[0]}
+                  incident={selectedIncident || userVisibleIncidents[0] || incidents[0]}
                   onBack={() => setActiveView('incidents')}
                   onUpdateStatus={handleUpdateStatus}
                   onExecutePlaybook={async () => {}}

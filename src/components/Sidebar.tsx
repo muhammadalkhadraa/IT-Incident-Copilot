@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="flex items-center gap-3">
             <AlertCircle className="w-4 h-4 text-cyan-400" />
-            <span>{t('allTickets')}</span>
+            <span>{isDeveloperOrAdmin ? t('allTickets') : t('myReportedIncidents')}</span>
           </div>
           <span className="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-cyan-300 border border-slate-700">
             {incidentsCount}
