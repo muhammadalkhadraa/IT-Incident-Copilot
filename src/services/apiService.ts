@@ -7,7 +7,7 @@ import type {
   UserProfile,
   IncidentComment,
 } from '../types';
-import { PLAYBOOK_LIBRARY } from '../data/mockData';
+import { PLAYBOOK_LIBRARY, INITIAL_INCIDENTS } from '../data/mockData';
 import { DiagnosticEngine } from './diagnosticEngine';
 
 const isLocalhost = typeof window !== 'undefined' && 
@@ -200,6 +200,25 @@ export interface AuthResponse {
 }
 
 const ACCOUNTS_STORAGE_KEY = 'copilot_registered_accounts_store';
+const INCIDENTS_STORAGE_KEY = 'copilot_persisted_incidents_store';
+
+export function getStoredIncidents(): Incident[] {
+  try {
+    const raw = localStorage.getItem(INCIDENTS_STORAGE_KEY) || sessionStorage.getItem(INCIDENTS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return INITIAL_INCIDENTS;
+}
+
+export function saveStoredIncidents(incidents: Incident[]): void {
+  try {
+    localStorage.setItem(INCIDENTS_STORAGE_KEY, JSON.stringify(incidents));
+    sessionStorage.setItem(INCIDENTS_STORAGE_KEY, JSON.stringify(incidents));
+  } catch {}
+}
 
 interface StoredAccount {
   user: UserProfile;
@@ -268,6 +287,9 @@ async function saveStoredAccountsAsync(accounts: StoredAccount[]): Promise<void>
 }
 
 export const apiService = {
+  getStoredIncidents,
+  saveStoredIncidents,
+
   /**
    * Fetch all incidents from ASP.NET Core backend API
    */
@@ -276,17 +298,21 @@ export const apiService = {
       const res = await safeFetch(`${API_BASE_URL}/incidents`);
       if (res.ok) {
         const data: IncidentResponseDto[] = await res.json();
-        return data.map(mapDtoToIncident);
+        const mapped = data.map(mapDtoToIncident);
+        if (mapped.length > 0) {
+          saveStoredIncidents(mapped);
+          return mapped;
+        }
       }
     } catch {}
-    return [];
+    return getStoredIncidents();
   },
-
 
   /**
    * Post a new incident to ASP.NET Core backend API (Persisted to Database)
    */
   async createIncident(payload: CreateIncidentPayload): Promise<Incident> {
+    let incident: Incident;
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents`, {
         method: 'POST',
@@ -305,30 +331,52 @@ export const apiService = {
 
       if (res.ok) {
         const data: IncidentResponseDto = await res.json();
-        return mapDtoToIncident(data);
+        incident = mapDtoToIncident(data);
+      } else {
+        const mockDto: IncidentResponseDto = {
+          id: `inc-${Date.now()}`,
+          ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category,
+          severity: payload.severity || 'MEDIUM',
+          status: 'NEW',
+          reporter: payload.reporter,
+          assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        incident = mapDtoToIncident(mockDto);
       }
-    } catch {}
+    } catch {
+      const mockDto: IncidentResponseDto = {
+        id: `inc-${Date.now()}`,
+        ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        title: payload.title,
+        description: payload.description,
+        category: payload.category,
+        severity: payload.severity || 'MEDIUM',
+        status: 'NEW',
+        reporter: payload.reporter,
+        assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      incident = mapDtoToIncident(mockDto);
+    }
 
-    const mockDto: IncidentResponseDto = {
-      id: `inc-${Date.now()}`,
-      ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: payload.title,
-      description: payload.description,
-      category: payload.category,
-      severity: payload.severity || 'MEDIUM',
-      status: 'NEW',
-      reporter: payload.reporter,
-      assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return mapDtoToIncident(mockDto);
+    const currentIncidents = getStoredIncidents();
+    const updatedIncidents = [incident, ...currentIncidents.filter(i => i.id !== incident.id)];
+    saveStoredIncidents(updatedIncidents);
+
+    return incident;
   },
 
   /**
    * Add a comment to an incident in ASP.NET Core backend API (Persisted to Database)
    */
   async addComment(incidentId: string, content: string, authorName: string, authorRole: string): Promise<IncidentCommentDto> {
+    let commentDto: IncidentCommentDto;
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents/${incidentId}/comments`, {
         method: 'POST',
@@ -343,23 +391,51 @@ export const apiService = {
       });
 
       if (res.ok) {
-        return await res.json();
+        commentDto = await res.json();
+      } else {
+        commentDto = {
+          id: `cmt-${Date.now()}`,
+          authorName,
+          authorRole,
+          timestamp: new Date().toISOString(),
+          content
+        };
       }
-    } catch {}
+    } catch {
+      commentDto = {
+        id: `cmt-${Date.now()}`,
+        authorName,
+        authorRole,
+        timestamp: new Date().toISOString(),
+        content
+      };
+    }
 
-    return {
-      id: `cmt-${Date.now()}`,
-      authorName,
-      authorRole,
-      timestamp: new Date().toISOString(),
-      content
-    };
+    const currentIncidents = getStoredIncidents();
+    const target = currentIncidents.find(i => i.id === incidentId);
+    if (target) {
+      const newComment = {
+        id: commentDto.id,
+        incidentId: incidentId,
+        authorId: `usr-${authorName.toLowerCase().replace(/\s+/g, '-')}`,
+        authorName,
+        authorRole: authorRole as any,
+        authorAvatar: authorName.split(' ').map(n => n[0]).join('').toUpperCase() || 'US',
+        timestamp: new Date().toLocaleTimeString(),
+        content
+      };
+      target.comments = [...(target.comments || []), newComment];
+      saveStoredIncidents(currentIncidents);
+    }
+
+    return commentDto;
   },
 
   /**
    * Update incident status in ASP.NET Core backend API
    */
   async updateIncidentStatus(id: string, newStatus: string): Promise<Incident> {
+    let incident: Incident;
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents/${id}/status`, {
         method: 'PUT',
@@ -371,24 +447,45 @@ export const apiService = {
 
       if (res.ok) {
         const data: IncidentResponseDto = await res.json();
-        return mapDtoToIncident(data);
+        incident = mapDtoToIncident(data);
+      } else {
+        const mockDto: IncidentResponseDto = {
+          id,
+          ticketNumber: `INC-2026-${id.slice(0, 4)}`,
+          title: 'Updated Incident',
+          description: 'Incident status modified',
+          severity: 'MEDIUM',
+          status: newStatus,
+          category: 'General',
+          reporter: 'User',
+          assignedTechnician: 'Alex Thorne',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        incident = mapDtoToIncident(mockDto);
       }
-    } catch {}
+    } catch {
+      const mockDto: IncidentResponseDto = {
+        id,
+        ticketNumber: `INC-2026-${id.slice(0, 4)}`,
+        title: 'Updated Incident',
+        description: 'Incident status modified',
+        severity: 'MEDIUM',
+        status: newStatus,
+        category: 'General',
+        reporter: 'User',
+        assignedTechnician: 'Alex Thorne',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      incident = mapDtoToIncident(mockDto);
+    }
 
-    const mockDto: IncidentResponseDto = {
-      id,
-      ticketNumber: `INC-2026-${id.slice(0, 4)}`,
-      title: 'Updated Incident',
-      description: 'Incident status modified',
-      severity: 'MEDIUM',
-      status: newStatus,
-      category: 'General',
-      reporter: 'User',
-      assignedTechnician: 'Alex Thorne',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return mapDtoToIncident(mockDto);
+    const currentIncidents = getStoredIncidents();
+    const updatedIncidents = currentIncidents.map(i => i.id === id ? { ...i, status: newStatus as any, updatedAt: new Date().toISOString() } : i);
+    saveStoredIncidents(updatedIncidents);
+
+    return incident;
   },
 
   /**
