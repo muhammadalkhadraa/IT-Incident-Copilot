@@ -11,14 +11,27 @@ import { PLAYBOOK_LIBRARY, INITIAL_INCIDENTS } from '../data/mockData';
 import { DiagnosticEngine } from './diagnosticEngine';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const LOCAL_STORAGE_KEY = 'copilot_tickets_cache_v2';
+
+function getLocalCachedTickets(): Incident[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function saveLocalCachedTickets(incidents: Incident[]): void {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(incidents));
+  } catch {}
+}
 
 async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const fullOptions: RequestInit = {
-    // @ts-ignore - Chrome Private Network Access (PNA) spec option
-    targetAddressSpace: 'local',
-    ...options
-  };
-  return fetch(url, fullOptions);
+  return fetch(url, options);
 }
 
 export interface DiagnosticResultDto {
@@ -172,10 +185,11 @@ export function mapDtoToIncident(dto: IncidentResponseDto): Incident {
       confidenceScore: 90,
       rootCauseCategory: dto.category || 'General IT Support',
       reasoningChain: [
-        'Ticket request logged successfully in Database.'
+        'Evaluated ticket request text & category.',
+        'Initial baseline diagnostic checks executed.'
       ],
       evidenceFound: diagnosticResults.map(d => `${d.ruleName}: ${d.evidence}`),
-      recommendedFix: 'Review ticket details.'
+      recommendedFix: 'Follow tier-1 IT helpdesk troubleshooting steps.'
     },
     alternativeHypotheses: []
   };
@@ -234,25 +248,36 @@ const DEFAULT_ACCOUNTS: { user: UserProfile; passwordHash: string }[] = [
 
 export const apiService = {
   /**
-   * Fetch all incidents directly from ASP.NET Core EF Core backend database
+   * Fetch all incidents directly from ASP.NET Core EF Core backend database & local cache
    */
   async fetchIncidents(): Promise<Incident[]> {
+    const local = getLocalCachedTickets();
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents`);
       if (res.ok) {
         const data: IncidentResponseDto[] = await res.json();
-        return data.map(mapDtoToIncident);
+        const mapped = data.map(mapDtoToIncident);
+        const map = new Map<string, Incident>();
+        for (const item of [...mapped, ...local, ...INITIAL_INCIDENTS]) {
+          if (!map.has(item.id)) {
+            map.set(item.id, item);
+          }
+        }
+        const merged = Array.from(map.values());
+        saveLocalCachedTickets(merged);
+        return merged;
       }
     } catch (err) {
-      console.warn('Backend API connection failed, returning initial seed incidents:', err);
+      console.warn('Backend API connection failed, returning cached incidents:', err);
     }
-    return INITIAL_INCIDENTS;
+    return local.length > 0 ? local : INITIAL_INCIDENTS;
   },
 
   /**
-   * Post a new incident directly to ASP.NET Core EF Core backend database
+   * Post a new incident directly to ASP.NET Core EF Core backend database & local cache
    */
   async createIncident(payload: CreateIncidentPayload): Promise<Incident> {
+    let incident: Incident;
     try {
       const res = await safeFetch(`${API_BASE_URL}/incidents`, {
         method: 'POST',
@@ -271,26 +296,45 @@ export const apiService = {
 
       if (res.ok) {
         const data: IncidentResponseDto = await res.json();
-        return mapDtoToIncident(data);
+        incident = mapDtoToIncident(data);
+      } else {
+        const mockDto: IncidentResponseDto = {
+          id: `inc-${Date.now()}`,
+          ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category,
+          severity: payload.severity || 'MEDIUM',
+          status: 'NEW',
+          reporter: payload.reporter,
+          assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        incident = mapDtoToIncident(mockDto);
       }
-    } catch (err) {
-      console.error('Error persisting ticket to backend database:', err);
+    } catch {
+      const mockDto: IncidentResponseDto = {
+        id: `inc-${Date.now()}`,
+        ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        title: payload.title,
+        description: payload.description,
+        category: payload.category,
+        severity: payload.severity || 'MEDIUM',
+        status: 'NEW',
+        reporter: payload.reporter,
+        assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      incident = mapDtoToIncident(mockDto);
     }
 
-    const mockDto: IncidentResponseDto = {
-      id: `inc-${Date.now()}`,
-      ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: payload.title,
-      description: payload.description,
-      category: payload.category,
-      severity: payload.severity || 'MEDIUM',
-      status: 'NEW',
-      reporter: payload.reporter,
-      assignedTechnician: payload.assignedTechnician || 'Alex Thorne',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return mapDtoToIncident(mockDto);
+    const current = getLocalCachedTickets();
+    const updated = [incident, ...current.filter(i => i.id !== incident.id)];
+    saveLocalCachedTickets(updated);
+
+    return incident;
   },
 
   /**
