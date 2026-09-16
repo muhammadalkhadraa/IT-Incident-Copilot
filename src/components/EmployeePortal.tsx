@@ -4,7 +4,6 @@ import {
   Plus, 
   Paperclip, 
   MessageSquare, 
-  Send, 
   FileText,
   LifeBuoy
 } from 'lucide-react';
@@ -23,14 +22,14 @@ interface EmployeePortalProps {
     attachmentName?: string,
     assignedTechnician?: string
   ) => void;
-  onAddComment: (incidentId: string, commentText: string) => void;
+  onAddComment?: (incidentId: string, commentText: string) => void;
 }
 
 export const EmployeePortal: React.FC<EmployeePortalProps> = ({
   user,
   incidents,
   onReportIncident,
-  onAddComment
+  onAddComment: _onAddComment
 }) => {
   const { t } = useLanguage();
   // Filter tickets created by or belonging to this specific user
@@ -49,7 +48,6 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
   const [assignedTechnician, setAssignedTechnician] = useState('Alex Thorne');
   const [developerUsers, setDeveloperUsers] = useState<UserProfile[]>([]);
   const [attachmentFileName, setAttachmentFileName] = useState('');
-  const [commentInput, setCommentInput] = useState('');
   const [showNewForm, setShowNewForm] = useState(false);
 
   // Load registered developer users
@@ -89,15 +87,6 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
     setNewTicketDesc('');
     setAttachmentFileName('');
     setShowNewForm(false);
-  };
-
-
-  const handleSendComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedIncident || !commentInput.trim()) return;
-
-    onAddComment(selectedIncident.id, commentInput);
-    setCommentInput('');
   };
 
   return (
@@ -243,25 +232,10 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                   ))}
                 </div>
 
-                {/* Add Reply Input */}
-                <form onSubmit={handleSendComment} className="flex gap-2">
-                  <input
-                    id="ticket-comment-input"
-                    name="comment"
-                    type="text"
-                    value={commentInput}
-                    onChange={(e) => setCommentInput(e.target.value)}
-                    placeholder={t('typeMessage')}
-                    className="flex-1 glass-input text-xs px-4 py-2.5 rounded-xl border-slate-700/80 focus:outline-none focus:border-cyan-500/50"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-glow-cyan transition-all flex items-center gap-1.5 shrink-0"
-                  >
-                    <span>{t('send')}</span>
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </form>
+                {/* Add Reply Input - View Only for Regular Employees */}
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-400 font-medium text-center">
+                  🔒 Support Agents & Administrators will post updates and replies here.
+                </div>
               </div>
 
             </div>

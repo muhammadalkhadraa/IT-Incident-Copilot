@@ -319,6 +319,7 @@ export function App() {
                 selectedIncident ? (
                   <IncidentWorkstation
                     incident={selectedIncident}
+                    currentUser={currentUser}
                     onBack={() => setSelectedIncidentId(null)}
                     onUpdateStatus={handleUpdateStatus}
                     onExecutePlaybook={async () => {}}
@@ -339,6 +340,7 @@ export function App() {
               {(activeView === 'diagnostics' || activeView === 'copilot' || activeView === 'similar') && (
                 <IncidentWorkstation
                   incident={selectedIncident || userVisibleIncidents[0] || incidents[0]}
+                  currentUser={currentUser}
                   onBack={() => setActiveView('incidents')}
                   onUpdateStatus={handleUpdateStatus}
                   onExecutePlaybook={async () => {}}
