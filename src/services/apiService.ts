@@ -3,11 +3,9 @@ import type {
   IncidentSeverity,
   IncidentStatus,
   RuleResultStatus,
-  DeviceTelemetry,
-  TelemetryPoint,
-  EventLogEntry,
   DiagnosticRuleResult,
   UserProfile,
+  IncidentComment,
 } from '../types';
 import { PLAYBOOK_LIBRARY } from '../data/mockData';
 import { DiagnosticEngine } from './diagnosticEngine';
@@ -29,6 +27,14 @@ export interface AuditLogDto {
   details: string;
 }
 
+export interface IncidentCommentDto {
+  id: string;
+  authorName: string;
+  authorRole: string;
+  timestamp: string;
+  content: string;
+}
+
 export interface IncidentResponseDto {
   id: string;
   ticketNumber: string;
@@ -37,9 +43,6 @@ export interface IncidentResponseDto {
   severity: string;
   status: string;
   category: string;
-  hostname: string;
-  ipAddress?: string;
-  macAddress?: string;
   reporter: string;
   assignedTechnician: string;
   createdAt: string;
@@ -49,84 +52,22 @@ export interface IncidentResponseDto {
   primaryHypothesisTitle?: string;
   diagnosticResults?: DiagnosticResultDto[];
   auditTrail?: AuditLogDto[];
+  comments?: IncidentCommentDto[];
 }
 
 export interface CreateIncidentPayload {
   title: string;
   description: string;
   category: string;
-  hostname?: string;
-  ipAddress?: string;
-  macAddress?: string;
   severity?: string;
   reporter: string;
-}
-
-/**
- * Generates realistic device telemetry (CPU, RAM, Disk, Latency metrics & Event Logs)
- * based on incident title, description, and category.
- */
-function generateTelemetryForIncident(dto: IncidentResponseDto): DeviceTelemetry {
-  const isSpooler = dto.title.toLowerCase().includes('spooler') || dto.category.toLowerCase().includes('enduser') || dto.category.toLowerCase().includes('infrastructure') || (dto.description || '').toLowerCase().includes('spool');
-  const isDns = dto.title.toLowerCase().includes('dns') || dto.title.toLowerCase().includes('kerberos') || dto.category.toLowerCase().includes('identity') || (dto.description || '').toLowerCase().includes('auth');
-  const isDisk = dto.title.toLowerCase().includes('disk') || dto.title.toLowerCase().includes('sql') || dto.category.toLowerCase().includes('database') || (dto.description || '').toLowerCase().includes('capacity');
-
-  const cpuBase = isSpooler ? 98 : isDns ? 48 : 35;
-  const ramBase = isSpooler ? 96 : isDisk ? 90 : 52;
-  const latencyBase = isDns ? 1820 : 18;
-  const diskBase = isDisk ? 97.4 : 65;
-
-  const metrics: TelemetryPoint[] = [
-    { timestamp: '10:00', cpuUsagePct: Math.max(15, cpuBase - 30), ramUsagePct: Math.max(20, ramBase - 25), diskUsagePct: Math.max(10, diskBase - 2), networkLatencyMs: Math.max(8, latencyBase > 500 ? 140 : latencyBase), activeThreads: 320 },
-    { timestamp: '10:01', cpuUsagePct: Math.max(25, cpuBase - 20), ramUsagePct: Math.max(30, ramBase - 18), diskUsagePct: Math.max(10, diskBase - 1.5), networkLatencyMs: Math.max(10, latencyBase > 500 ? 380 : latencyBase), activeThreads: 450 },
-    { timestamp: '10:02', cpuUsagePct: Math.max(40, cpuBase - 10), ramUsagePct: Math.max(40, ramBase - 10), diskUsagePct: Math.max(10, diskBase - 0.8), networkLatencyMs: Math.max(12, latencyBase > 500 ? 890 : latencyBase), activeThreads: 680 },
-    { timestamp: '10:03', cpuUsagePct: Math.max(50, cpuBase - 2), ramUsagePct: Math.max(50, ramBase - 4), diskUsagePct: diskBase, networkLatencyMs: Math.max(14, latencyBase > 500 ? 1450 : latencyBase), activeThreads: 890 },
-    { timestamp: '10:04', cpuUsagePct: cpuBase, ramUsagePct: ramBase, diskUsagePct: diskBase, networkLatencyMs: latencyBase, activeThreads: 1040 },
-  ];
-
-  const logs: EventLogEntry[] = [];
-  if (isSpooler) {
-    logs.push(
-      { id: `log-${dto.id}-1`, timestamp: '10:02:14', level: 'ERROR', source: 'PrintSpooler', eventId: 372, message: `Document "Q3_Financials_Draft.pdf" owned by ${dto.reporter} failed to print. Win32 error code 0x80070057.` },
-      { id: `log-${dto.id}-2`, timestamp: '10:03:01', level: 'WARN', source: 'Resource-Manager', eventId: 2004, message: `Windows successfully diagnosed a low virtual memory condition on ${dto.hostname || 'HOST-EXEC-PRT04'}. Process spoolsv.exe consumed 2840192832 bytes.` },
-      { id: `log-${dto.id}-3`, timestamp: '10:04:12', level: 'ERROR', source: 'Application Error', eventId: 1000, message: 'Faulting application name: spoolsv.exe, faulting module: hpzpui64.dll.' }
-    );
-  } else if (isDns) {
-    logs.push(
-      { id: `log-${dto.id}-1`, timestamp: '10:02:14', level: 'WARN', source: 'KDC', eventId: 16, message: `The KDC encountered an unknown error while processing a Kerberos ticket request for client ${dto.reporter}.` },
-      { id: `log-${dto.id}-2`, timestamp: '10:03:01', level: 'ERROR', source: 'DNS-Server', eventId: 4015, message: 'The DNS server has encountered a critical error from Active Directory. Latency measured at 1820ms.' }
-    );
-  } else if (isDisk) {
-    logs.push(
-      { id: `log-${dto.id}-1`, timestamp: '10:02:14', level: 'WARN', source: 'MSSQLSERVER', eventId: 1827, message: 'CREATE DATABASE or ALTER DATABASE failed because partition E:\\SQLData is full.' }
-    );
-  } else {
-    logs.push(
-      { id: `log-${dto.id}-1`, timestamp: '10:02:14', level: 'WARN', source: 'SystemSentinel', eventId: 101, message: `Telemetry warning registered on ${dto.hostname || 'HOST-EXEC-PRT04'}: ${dto.title}.` },
-      { id: `log-${dto.id}-2`, timestamp: '10:03:01', level: 'INFO', source: 'DiagnosticAgent', eventId: 200, message: 'Automated diagnostic agent collected telemetry performance metrics.' }
-    );
-  }
-
-  return {
-    deviceId: `dev-${dto.id.slice(0, 8)}`,
-    hostname: dto.hostname || 'HOST-EXEC-PRT04.corp.internal',
-    os: 'Windows Server 2022 Enterprise',
-    ipAddress: dto.ipAddress || '10.140.12.88',
-    macAddress: dto.macAddress || `00:1A:2B:${dto.id.slice(0, 2).toUpperCase()}:${dto.id.slice(2, 4).toUpperCase()}:${dto.id.slice(4, 6).toUpperCase()}`,
-    lastHeartbeat: '2 seconds ago',
-    agentVersion: 'v4.8.2-enterprise',
-    uptime: '14 days',
-    metrics,
-    logs
-  };
+  assignedTechnician?: string;
 }
 
 /**
  * Maps backend IncidentResponseDto to rich frontend Incident type
  */
 export function mapDtoToIncident(dto: IncidentResponseDto): Incident {
-  const telemetry = generateTelemetryForIncident(dto);
-
   let diagnosticResults: DiagnosticRuleResult[] = (dto.diagnosticResults || []).map((r, idx) => ({
     ruleId: `rule-res-${idx}`,
     ruleCode: r.ruleCode,
@@ -137,6 +78,17 @@ export function mapDtoToIncident(dto: IncidentResponseDto): Incident {
     recommendation: r.recommendation
   }));
 
+  const comments: IncidentComment[] = (dto.comments || []).map((c, idx) => ({
+    id: c.id || `cmt-${idx}-${Date.now()}`,
+    incidentId: dto.id,
+    authorId: `usr-${c.authorName.toLowerCase().replace(/\s+/g, '-')}`,
+    authorName: c.authorName,
+    authorRole: (c.authorRole as any) || 'EMPLOYEE',
+    authorAvatar: c.authorName.split(' ').map(n => n[0]).join('').toUpperCase() || 'US',
+    timestamp: c.timestamp ? new Date(c.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
+    content: c.content
+  }));
+
   const tempIncident: Incident = {
     id: dto.id,
     ticketNumber: dto.ticketNumber,
@@ -144,14 +96,24 @@ export function mapDtoToIncident(dto: IncidentResponseDto): Incident {
     description: dto.description || 'No description provided.',
     severity: (dto.severity as IncidentSeverity) || 'MEDIUM',
     status: (dto.status as IncidentStatus) || 'NEW',
-    category: dto.category || 'General IT',
-    affectedService: dto.category || 'Core Enterprise Systems',
-    reporter: dto.reporter || 'System Reporter',
-    assignedTechnician: dto.assignedTechnician || 'Unassigned',
+    category: dto.category || 'General IT Support',
+    affectedService: dto.category || 'General IT Support',
+    reporter: dto.reporter || 'Standard User',
+    assignedTechnician: dto.assignedTechnician || 'Alex Thorne',
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
     slaDueDate: new Date(new Date(dto.createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString(),
-    deviceTelemetry: telemetry,
+    deviceTelemetry: {
+      deviceId: `dev-${dto.id.slice(0, 8)}`,
+      hostname: 'Standard Workstation',
+      os: 'Standard OS',
+      ipAddress: '10.0.0.1',
+      lastHeartbeat: 'Now',
+      agentVersion: 'v1.0',
+      uptime: '1 day',
+      metrics: [],
+      logs: []
+    },
     diagnosticResults: [],
     similarIncidents: [],
     recommendedPlaybooks: PLAYBOOK_LIBRARY,
@@ -164,7 +126,7 @@ export function mapDtoToIncident(dto: IncidentResponseDto): Incident {
       actionType: (a.actionType as any) || 'STATUS_CHANGE',
       details: a.details
     })),
-    comments: [],
+    comments,
     attachments: []
   };
 
@@ -179,33 +141,32 @@ export function mapDtoToIncident(dto: IncidentResponseDto): Incident {
     copilotNotes: `AI Diagnosis computed with ${dto.aiConfidenceScore ?? 90}% confidence.`,
     primaryHypothesis: {
       id: `hypo-${dto.id.slice(0, 8)}`,
-      title: dto.primaryHypothesisTitle || 'Automated AI Root Cause Analysis',
+      title: dto.primaryHypothesisTitle || 'Automated AI Ticket Analysis',
       confidenceScore: dto.aiConfidenceScore ?? 90,
-      rootCauseCategory: dto.category || 'System Bottleneck',
+      rootCauseCategory: dto.category || 'General Issue',
       reasoningChain: [
-        'Evaluated telemetry & diagnostic log events.',
+        'Evaluated ticket request text & category.',
         dto.aiSummary
       ],
       evidenceFound: diagnosticResults.map(d => `${d.ruleName}: ${d.evidence}`),
-      recommendedFix: 'Review evidence logs and execute corresponding remediation playbook.'
+      recommendedFix: 'Review ticket details and follow standard IT resolution steps.'
     },
     alternativeHypotheses: []
   } : {
     incidentId: dto.id,
     analyzedAt: dto.updatedAt,
-    summary: `Primary root cause identified with 94% confidence: Diagnostic telemetry anomaly in ${telemetry.hostname}. Rapid remediation available via recommended automated playbooks.`,
-    copilotNotes: `Deterministic diagnostic rules evaluated ${diagnosticResults.length} rules against live telemetry metrics.`,
+    summary: `Ticket request received. Automated copilot ready to assist assigned technician.`,
+    copilotNotes: `Standard ticket evaluation completed.`,
     primaryHypothesis: {
       id: `hypo-${dto.id.slice(0, 8)}`,
-      title: dto.primaryHypothesisTitle || 'Automated Diagnostic Anomaly Analysis',
-      confidenceScore: 92,
-      rootCauseCategory: dto.category || 'System Performance Bottleneck',
+      title: dto.primaryHypothesisTitle || 'Ticket Analysis',
+      confidenceScore: 90,
+      rootCauseCategory: dto.category || 'General IT Support',
       reasoningChain: [
-        'Evaluated real-time CPU, RAM, Network latency & Event Log streams.',
-        'Executed 5 empirical diagnostic rule checks.'
+        'Ticket request logged successfully in Database.'
       ],
       evidenceFound: diagnosticResults.map(d => `${d.ruleName}: ${d.evidence}`),
-      recommendedFix: 'Review telemetry metrics and execute associated recovery playbook.'
+      recommendedFix: 'Review ticket details.'
     },
     alternativeHypotheses: []
   };
@@ -237,7 +198,6 @@ function getStoredAccounts(): StoredAccount[] {
     if (data) return JSON.parse(data);
   } catch {}
 
-  // Initial default accounts
   return [
     {
       user: {
@@ -272,18 +232,6 @@ function getStoredAccounts(): StoredAccount[] {
         department: 'Executive Operations',
         title: 'VP of Corporate Operations',
         avatar: 'MV'
-      },
-      passwordHash: 'Password123!'
-    },
-    {
-      user: {
-        id: 'usr-dev-03',
-        name: 'Dev Engineer',
-        email: 'dev.user@corp.internal',
-        role: 'TECHNICIAN',
-        department: 'Platform Engineering',
-        title: 'Lead DevOps & Copilot Developer',
-        avatar: 'DE'
       },
       passwordHash: 'Password123!'
     }
@@ -355,84 +303,68 @@ export const apiService = {
    * Post a new incident to ASP.NET Core backend API (Persisted to Database)
    */
   async createIncident(payload: CreateIncidentPayload): Promise<Incident> {
-    try {
-      const res = await fetch(`${API_BASE_URL}/incidents`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: payload.title,
-          description: payload.description,
-          category: payload.category,
-          hostname: payload.hostname || 'WORKSTATION-PC01',
-          ipAddress: payload.ipAddress || '',
-          macAddress: payload.macAddress || '',
-          severity: payload.severity || 'MEDIUM',
-          reporter: payload.reporter
-        }),
-      });
+    const res = await fetch(`${API_BASE_URL}/incidents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: payload.title,
+        description: payload.description,
+        category: payload.category,
+        severity: payload.severity || 'MEDIUM',
+        reporter: payload.reporter,
+        assignedTechnician: payload.assignedTechnician || 'Alex Thorne'
+      }),
+    });
 
-      if (res.ok) {
-        const data: IncidentResponseDto = await res.json();
-        return mapDtoToIncident(data);
-      }
-    } catch {}
+    if (res.ok) {
+      const data: IncidentResponseDto = await res.json();
+      return mapDtoToIncident(data);
+    }
+    
+    throw new Error('Failed to create incident in backend database.');
+  },
 
-    // Fallback incident creation for Vercel static deployment
-    const mockDto: IncidentResponseDto = {
-      id: `inc-${Date.now()}`,
-      ticketNumber: `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: payload.title,
-      description: payload.description,
-      category: payload.category,
-      severity: payload.severity || 'MEDIUM',
-      status: 'DIAGNOSING',
-      hostname: payload.hostname || 'WORKSTATION-PC01',
-      ipAddress: payload.ipAddress || '192.168.1.105',
-      macAddress: payload.macAddress || '00:1A:2B:7C:8D:9E',
-      reporter: payload.reporter,
-      assignedTechnician: 'Alex Thorne',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return mapDtoToIncident(mockDto);
+  /**
+   * Add a comment to an incident in ASP.NET Core backend API (Persisted to Database)
+   */
+  async addComment(incidentId: string, content: string, authorName: string, authorRole: string): Promise<IncidentCommentDto> {
+    const res = await fetch(`${API_BASE_URL}/incidents/${incidentId}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        authorName,
+        authorRole,
+        content
+      }),
+    });
+
+    if (res.ok) {
+      return await res.json();
+    }
+    throw new Error('Failed to add comment to database.');
   },
 
   /**
    * Update incident status in ASP.NET Core backend API
    */
   async updateIncidentStatus(id: string, newStatus: string): Promise<Incident> {
-    try {
-      const res = await fetch(`${API_BASE_URL}/incidents/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ newStatus }),
-      });
+    const res = await fetch(`${API_BASE_URL}/incidents/${id}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ newStatus }),
+    });
 
-      if (res.ok) {
-        const data: IncidentResponseDto = await res.json();
-        return mapDtoToIncident(data);
-      }
-    } catch {}
-
-    const mockDto: IncidentResponseDto = {
-      id,
-      ticketNumber: `INC-2026-${id.slice(0, 4)}`,
-      title: 'Updated Incident',
-      description: 'Incident status modified',
-      severity: 'MEDIUM',
-      status: newStatus,
-      category: 'General',
-      hostname: 'WORKSTATION-PC01',
-      reporter: 'User',
-      assignedTechnician: 'Alex Thorne',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return mapDtoToIncident(mockDto);
+    if (res.ok) {
+      const data: IncidentResponseDto = await res.json();
+      return mapDtoToIncident(data);
+    }
+    throw new Error('Failed to update incident status.');
   },
 
   /**
@@ -465,7 +397,6 @@ export const apiService = {
       }
     }
 
-    // Global Cloud + Local Fallback authentication for Vercel deployment
     const accounts = await getStoredAccountsAsync();
     const target = accounts.find(a => a.user.email.trim().toLowerCase() === cleanEmail);
 
@@ -485,7 +416,7 @@ export const apiService = {
   },
 
   /**
-   * Register new user account (Persists in Backend Database & Global Cloud Store)
+   * Register new user account (Persists in Backend Database)
    */
   async register(name: string, email: string, password: string, role: string = 'EMPLOYEE'): Promise<AuthResponse> {
     const cleanEmail = email.trim().toLowerCase();
@@ -516,7 +447,6 @@ export const apiService = {
       }
     }
 
-    // Persistent global cloud + local registration for Vercel deployment (Works across ALL devices globally)
     const accounts = await getStoredAccountsAsync();
     if (accounts.some(a => a.user.email.trim().toLowerCase() === cleanEmail)) {
       throw new Error('An account with this email address already exists. Please sign in instead.');
@@ -560,7 +490,7 @@ export const apiService = {
   },
 
   /**
-   * Update user role (Developer Control Panel)
+   * Update user role
    */
   async updateUserRole(userId: string, role: string): Promise<UserProfile> {
     try {
@@ -583,7 +513,7 @@ export const apiService = {
   },
 
   /**
-   * Reset user password with BCrypt hashing in database
+   * Reset user password
    */
   async resetPassword(email: string, newPassword: string): Promise<{ message: string }> {
     try {
@@ -604,16 +534,6 @@ export const apiService = {
     target.passwordHash = newPassword;
     await saveStoredAccountsAsync(accounts);
     return { message: 'Password updated successfully.' };
-  },
-
-  /**
-   * Automatically extracts real PC device telemetry (Hostname, Real IP, Physical MAC Address) from backend API
-   */
-  async fetchMyDeviceTelemetry(): Promise<{ hostname: string; ipAddress: string; macAddress: string; os: string }> {
-    const res = await fetch(`${API_BASE_URL}/device/my-device-telemetry`);
-    if (!res.ok) {
-      throw new Error('Failed to extract device telemetry.');
-    }
-    return res.json();
   }
 };
+

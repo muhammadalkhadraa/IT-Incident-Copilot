@@ -18,6 +18,7 @@ namespace ITIncidentCopilot.Api.Application.Services
         Task<IncidentResponseDto?> GetIncidentByIdAsync(Guid id);
         Task<IncidentResponseDto> CreateIncidentAsync(CreateIncidentRequestDto dto);
         Task<IncidentResponseDto?> UpdateStatusAsync(Guid id, string newStatus, string updatedBy);
+        Task<IncidentCommentDto?> AddCommentAsync(Guid incidentId, string authorName, string authorRole, string content);
     }
 
     public class IncidentService : IIncidentService
@@ -51,6 +52,7 @@ namespace ITIncidentCopilot.Api.Application.Services
                 var query = _db.Incidents
                     .Include(i => i.DiagnosticResults)
                     .Include(i => i.AuditTrail)
+                    .Include(i => i.Comments)
                     .AsQueryable();
 
                 if (!string.IsNullOrEmpty(severity)) query = query.Where(i => i.Severity == severity);
@@ -61,7 +63,7 @@ namespace ITIncidentCopilot.Api.Application.Services
             }
             catch
             {
-                // Fallback when PostgreSQL database container is offline
+                // Fallback when database connection encounters an exception
                 return GetInMemorySeedIncidents();
             }
         }
@@ -75,11 +77,10 @@ namespace ITIncidentCopilot.Api.Application.Services
                     Id = Guid.NewGuid(),
                     TicketNumber = "INC-2026-8812",
                     Title = "Executive Print Spooler Service Crashing & Memory Leak",
-                    Description = "HOST-EXEC-PRT04 spoolsv.exe process heap memory usage growing rapidly to 2.8 GB.",
+                    Description = "Spooler service process heap memory usage growing rapidly.",
                     Severity = "CRITICAL",
                     Status = "INVESTIGATING",
                     Category = "Infrastructure / EndUser Services",
-                    Hostname = "HOST-EXEC-PRT04.corp.internal",
                     Reporter = "Marcus Vance",
                     AssignedTechnician = "Alex Thorne",
                     CreatedAt = DateTime.UtcNow.AddHours(-2),
@@ -98,11 +99,10 @@ namespace ITIncidentCopilot.Api.Application.Services
                 Id = Guid.NewGuid(),
                 TicketNumber = "INC-2026-8812",
                 Title = "Executive Print Spooler Service Crashing & Memory Leak",
-                Description = "HOST-EXEC-PRT04 spoolsv.exe process heap memory usage growing rapidly to 2.8 GB.",
+                Description = "Spooler service process heap memory usage growing rapidly.",
                 Category = "Infrastructure / EndUser Services",
                 Severity = "CRITICAL",
                 Status = "INVESTIGATING",
-                Hostname = "HOST-EXEC-PRT04.corp.internal",
                 Reporter = "Marcus Vance",
                 AssignedTechnician = "Alex Thorne",
                 CreatedAt = DateTime.UtcNow.AddHours(-2),
@@ -121,6 +121,7 @@ namespace ITIncidentCopilot.Api.Application.Services
             var incident = await _db.Incidents
                 .Include(i => i.DiagnosticResults)
                 .Include(i => i.AuditTrail)
+                .Include(i => i.Comments)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             return incident == null ? null : MapToDto(incident);
@@ -137,16 +138,11 @@ namespace ITIncidentCopilot.Api.Application.Services
                 TicketNumber = ticketNo,
                 Title = dto.Title,
                 Description = dto.Description,
-                Category = dto.Category,
-                Severity = dto.Severity,
-                Status = "DIAGNOSING",
-                Reporter = dto.Reporter,
-                Hostname = string.IsNullOrWhiteSpace(dto.Hostname) ? "HOST-EXEC-PRT04" : dto.Hostname,
-                IpAddress = dto.IpAddress,
-                MacAddress = dto.MacAddress,
-                CpuUsagePct = 95.4,
-                RamUsagePct = 92.1,
-                NetworkLatencyMs = 24,
+                Category = string.IsNullOrWhiteSpace(dto.Category) ? "General IT Support" : dto.Category,
+                Severity = string.IsNullOrWhiteSpace(dto.Severity) ? "MEDIUM" : dto.Severity,
+                Status = "NEW",
+                Reporter = string.IsNullOrWhiteSpace(dto.Reporter) ? "Standard User" : dto.Reporter,
+                AssignedTechnician = string.IsNullOrWhiteSpace(dto.AssignedTechnician) ? "Alex Thorne" : dto.AssignedTechnician,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -155,7 +151,7 @@ namespace ITIncidentCopilot.Api.Application.Services
             var diagResults = _diagnosticEngine.EvaluateDeterministicRules(incident);
             incident.DiagnosticResults = diagResults;
 
-            // 2. Run AI Synthesis Engine (Generative AI Reasoning based on Evidence)
+            // 2. Run AI Synthesis Engine
             var aiDiagnosis = await _aiService.ClassifyAndDiagnoseAsync(incident);
             incident.AiSummary = aiDiagnosis.Summary;
             incident.AiConfidenceScore = aiDiagnosis.ConfidenceScore;
@@ -164,10 +160,10 @@ namespace ITIncidentCopilot.Api.Application.Services
             // 3. Append Audit Trail
             incident.AuditTrail.Add(new AuditLogRecord
             {
-                Actor = dto.Reporter,
+                Actor = incident.Reporter,
                 ActorType = "TECHNICIAN",
-                ActionType = "TELEMETRY_ALERT",
-                Details = $"Ticket {ticketNo} created. Evaluated {diagResults.Count} deterministic rules."
+                ActionType = "STATUS_CHANGE",
+                Details = $"Normal ticket request {ticketNo} created successfully."
             });
 
             _db.Incidents.Add(incident);
@@ -181,23 +177,59 @@ namespace ITIncidentCopilot.Api.Application.Services
 
         public async Task<IncidentResponseDto?> UpdateStatusAsync(Guid id, string newStatus, string updatedBy)
         {
-            var incident = await _db.Incidents.Include(i => i.AuditTrail).FirstOrDefaultAsync(i => i.Id == id);
+            var incident = await _db.Incidents.FirstOrDefaultAsync(i => i.Id == id);
             if (incident == null) return null;
 
             incident.Status = newStatus;
             incident.UpdatedAt = DateTime.UtcNow;
 
-            incident.AuditTrail.Add(new AuditLogRecord
+            var auditLog = new AuditLogRecord
             {
+                Id = Guid.NewGuid(),
+                IncidentId = id,
                 Actor = updatedBy,
                 ActorType = "TECHNICIAN",
                 ActionType = "STATUS_CHANGE",
-                Details = $"Changed status to {newStatus}."
-            });
+                Details = $"Changed status to {newStatus}.",
+                Timestamp = DateTime.UtcNow
+            };
+
+            _db.AuditLogs.Add(auditLog);
+            await _db.SaveChangesAsync();
+
+            return await GetIncidentByIdAsync(id);
+        }
+
+        public async Task<IncidentCommentDto?> AddCommentAsync(Guid incidentId, string authorName, string authorRole, string content)
+        {
+            var incident = await _db.Incidents.FirstOrDefaultAsync(i => i.Id == incidentId);
+            if (incident == null) return null;
+
+            var comment = new IncidentCommentRecord
+            {
+                Id = Guid.NewGuid(),
+                IncidentId = incidentId,
+                AuthorName = string.IsNullOrWhiteSpace(authorName) ? "User" : authorName,
+                AuthorRole = string.IsNullOrWhiteSpace(authorRole) ? "EMPLOYEE" : authorRole,
+                Content = content,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _db.Comments.Add(comment);
+            incident.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
-            return MapToDto(incident);
+
+            return new IncidentCommentDto
+            {
+                Id = comment.Id,
+                AuthorName = comment.AuthorName,
+                AuthorRole = comment.AuthorRole,
+                Content = comment.Content,
+                Timestamp = comment.Timestamp
+            };
         }
+
 
         private static IncidentResponseDto MapToDto(Incident inc)
         {
@@ -210,9 +242,6 @@ namespace ITIncidentCopilot.Api.Application.Services
                 Severity = inc.Severity,
                 Status = inc.Status,
                 Category = inc.Category,
-                Hostname = inc.Hostname,
-                IpAddress = inc.IpAddress,
-                MacAddress = inc.MacAddress,
                 Reporter = inc.Reporter,
                 AssignedTechnician = inc.AssignedTechnician,
                 CreatedAt = inc.CreatedAt,
@@ -234,8 +263,17 @@ namespace ITIncidentCopilot.Api.Application.Services
                     Actor = a.Actor,
                     ActionType = a.ActionType,
                     Details = a.Details
+                }).ToList(),
+                Comments = inc.Comments.Select(c => new IncidentCommentDto
+                {
+                    Id = c.Id,
+                    AuthorName = c.AuthorName,
+                    AuthorRole = c.AuthorRole,
+                    Content = c.Content,
+                    Timestamp = c.Timestamp
                 }).ToList()
             };
         }
     }
 }
+

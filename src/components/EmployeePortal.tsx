@@ -21,9 +21,6 @@ interface EmployeePortalProps {
     category: string,
     description: string,
     attachmentName?: string,
-    hostname?: string,
-    ipAddress?: string,
-    macAddress?: string,
     assignedTechnician?: string
   ) => void;
   onAddComment: (incidentId: string, commentText: string) => void;
@@ -85,9 +82,6 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
       newTicketCategory,
       newTicketDesc,
       attachmentFileName,
-      'MY-WORKSTATION-PC',
-      '192.168.1.105',
-      '00:1A:2B:7C:8D:9E',
       assignedTechnician
     );
 
@@ -96,6 +90,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
     setAttachmentFileName('');
     setShowNewForm(false);
   };
+
 
   const handleSendComment = (e: React.FormEvent) => {
     e.preventDefault();

@@ -12,10 +12,14 @@ namespace ITIncidentCopilot.Api.Data
         {
             try
             {
-                await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Incidents\" ADD COLUMN IF NOT EXISTS \"MacAddress\" text DEFAULT '';");
-                await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Incidents\" ADD COLUMN IF NOT EXISTS \"IpAddress\" text DEFAULT '';");
+                if (context.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Incidents\" ADD COLUMN IF NOT EXISTS \"MacAddress\" text DEFAULT '';");
+                    await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Incidents\" ADD COLUMN IF NOT EXISTS \"IpAddress\" text DEFAULT '';");
+                }
             }
             catch { }
+
 
             // Migrate any existing legacy unhashed passwords to valid BCrypt hashes
             var existingUsers = await context.Users.ToListAsync();

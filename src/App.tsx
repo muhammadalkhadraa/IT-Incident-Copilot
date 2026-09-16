@@ -257,21 +257,16 @@ export function App() {
                 <EmployeePortal
                   user={currentUser}
                   incidents={incidents}
-                  onReportIncident={async (title: string, category: string, description: string, attachmentName?: string, hostname?: string, ipAddress?: string, macAddress?: string, assignedTech?: string) => {
+                  onReportIncident={async (title: string, category: string, description: string, attachmentName?: string, assignedTech?: string) => {
                     try {
                       const persistedInc = await apiService.createIncident({
                         title,
                         description,
                         category,
                         reporter: currentUser.name,
-                        hostname: hostname || 'WORKSTATION-PC01',
-                        ipAddress: ipAddress || '192.168.1.105',
-                        macAddress: macAddress || '00:1A:2B:7C:8D:9E',
-                        severity: 'MEDIUM'
+                        severity: 'MEDIUM',
+                        assignedTechnician: assignedTech || 'Alex Thorne'
                       });
-                      if (assignedTech) {
-                        persistedInc.assignedTechnician = assignedTech;
-                      }
                       if (attachmentName) {
                         persistedInc.attachments = [{
                           id: `att-${Date.now()}`,
@@ -287,79 +282,36 @@ export function App() {
                       setSelectedIncidentId(persistedInc.id);
                       setActiveView('incidents');
                     } catch (err) {
-                      console.error('Failed to save ticket to backend database, creating local ticket:', err);
-                      const nextSeq = String(incidents.length + 1).padStart(4, '0');
-                      const newInc: Incident = {
-                        id: `inc-${Date.now()}`,
-                        ticketNumber: `INC-2026-${nextSeq}`,
-                        title,
-                        description,
-                        category,
-                        severity: 'MEDIUM',
-                        status: 'NEW',
-                        affectedService: category,
-                        reporter: currentUser.name,
-                        reporterId: currentUser.id,
-                        assignedTechnician: assignedTech || 'Alex Thorne',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        slaDueDate: new Date(Date.now() + 86400000).toISOString(),
-                        deviceTelemetry: {
-                          deviceId: `dev-${Date.now()}`,
-                          hostname: hostname || 'WORKSTATION-PC01',
-                          os: 'Windows 11 Enterprise',
-                          ipAddress: ipAddress || '192.168.1.105',
-                          macAddress: macAddress || '00:1A:2B:7C:8D:9E',
-                          lastHeartbeat: new Date().toISOString(),
-                          agentVersion: 'v4.8.2',
-                          uptime: '14 days',
-                          metrics: [],
-                          logs: []
-                        },
-                        diagnosticResults: [],
-                        similarIncidents: [],
-                        recommendedPlaybooks: [],
-                        attachments: attachmentName ? [{
-                          id: `att-${Date.now()}`,
-                          filename: attachmentName,
-                          filesize: '1.4 MB',
-                          filetype: 'PNG',
-                          uploadedBy: currentUser.name,
-                          uploadedAt: new Date().toISOString(),
-                          url: '#'
-                        }] : [],
-                        executionHistory: [],
-                        auditTrail: [],
-                        comments: []
-                      };
-                      setIncidents(prev => [newInc, ...prev]);
-                      setSelectedIncidentId(newInc.id);
-                      setActiveView('incidents');
+                      console.error('Failed to create incident in backend database:', err);
                     }
                   }}
-                  onAddComment={(incidentId: string, text: string) => {
-                    setIncidents(prev => prev.map(inc => {
-                      if (inc.id !== incidentId) return inc;
-                      return {
-                        ...inc,
-                        comments: [
-                          ...inc.comments,
-                          {
-                            id: `cmt-${Date.now()}`,
-                            incidentId: incidentId,
-                            authorId: currentUser.id,
-                            authorName: currentUser.name,
-                            authorRole: currentUser.role,
-                            authorAvatar: currentUser.avatar,
-                            content: text,
-                            timestamp: new Date().toLocaleTimeString()
-                          }
-                        ]
-                      };
-                    }));
+                  onAddComment={async (incidentId: string, text: string) => {
+                    try {
+                      const commentDto = await apiService.addComment(incidentId, text, currentUser.name, currentUser.role);
+                      setIncidents(prev => prev.map(inc => {
+                        if (inc.id !== incidentId) return inc;
+                        const newCmt = {
+                          id: commentDto.id || `cmt-${Date.now()}`,
+                          incidentId: incidentId,
+                          authorId: currentUser.id,
+                          authorName: commentDto.authorName || currentUser.name,
+                          authorRole: (commentDto.authorRole as any) || currentUser.role,
+                          authorAvatar: currentUser.avatar,
+                          content: commentDto.content,
+                          timestamp: commentDto.timestamp ? new Date(commentDto.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString()
+                        };
+                        return {
+                          ...inc,
+                          comments: [...inc.comments, newCmt]
+                        };
+                      }));
+                    } catch (err) {
+                      console.error('Failed to persist comment to backend database:', err);
+                    }
                   }}
                 />
               )}
+
 
               {/* Incidents Master List & Detail Workstation */}
               {activeView === 'incidents' && (

@@ -36,19 +36,6 @@ namespace ITIncidentCopilot.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<IncidentResponseDto>> CreateIncident([FromBody] CreateIncidentRequestDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.IpAddress))
-            {
-                var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-                if (!string.IsNullOrEmpty(remoteIp))
-                {
-                    dto.IpAddress = remoteIp == "::1" ? "127.0.0.1 (Localhost)" : remoteIp;
-                }
-                else
-                {
-                    dto.IpAddress = "192.168.1.105";
-                }
-            }
-
             var result = await _incidentService.CreateIncidentAsync(dto);
             return CreatedAtAction(nameof(GetIncidentById), new { id = result.Id }, result);
         }
@@ -61,5 +48,14 @@ namespace ITIncidentCopilot.Api.Controllers
             if (result == null) return NotFound();
             return Ok(result);
         }
+
+        [HttpPost("{id}/comments")]
+        public async Task<ActionResult<IncidentCommentDto>> AddComment(Guid id, [FromBody] CreateCommentRequestDto dto)
+        {
+            var comment = await _incidentService.AddCommentAsync(id, dto.AuthorName, dto.AuthorRole, dto.Content);
+            if (comment == null) return NotFound(new { message = "Incident not found." });
+            return Ok(comment);
+        }
     }
 }
+

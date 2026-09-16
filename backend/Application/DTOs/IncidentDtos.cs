@@ -8,16 +8,30 @@ namespace ITIncidentCopilot.Api.Application.DTOs
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
-        public string Hostname { get; set; } = string.Empty;
-        public string IpAddress { get; set; } = string.Empty;
-        public string MacAddress { get; set; } = string.Empty;
         public string Severity { get; set; } = "MEDIUM";
         public string Reporter { get; set; } = string.Empty;
+        public string? AssignedTechnician { get; set; }
     }
 
     public class UpdateStatusRequestDto
     {
         public string NewStatus { get; set; } = string.Empty;
+    }
+
+    public class CreateCommentRequestDto
+    {
+        public string AuthorName { get; set; } = string.Empty;
+        public string AuthorRole { get; set; } = "EMPLOYEE";
+        public string Content { get; set; } = string.Empty;
+    }
+
+    public class IncidentCommentDto
+    {
+        public Guid Id { get; set; }
+        public string AuthorName { get; set; } = string.Empty;
+        public string AuthorRole { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public string Content { get; set; } = string.Empty;
     }
 
     public class IncidentResponseDto
@@ -29,9 +43,6 @@ namespace ITIncidentCopilot.Api.Application.DTOs
         public string Severity { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
-        public string Hostname { get; set; } = string.Empty;
-        public string IpAddress { get; set; } = string.Empty;
-        public string MacAddress { get; set; } = string.Empty;
         public string Reporter { get; set; } = string.Empty;
         public string AssignedTechnician { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
@@ -43,6 +54,7 @@ namespace ITIncidentCopilot.Api.Application.DTOs
 
         public List<DiagnosticResultDto> DiagnosticResults { get; set; } = new();
         public List<AuditLogDto> AuditTrail { get; set; } = new();
+        public List<IncidentCommentDto> Comments { get; set; } = new();
     }
 
     public class DiagnosticResultDto
@@ -62,3 +74,4 @@ namespace ITIncidentCopilot.Api.Application.DTOs
         public string Details { get; set; } = string.Empty;
     }
 }
+
