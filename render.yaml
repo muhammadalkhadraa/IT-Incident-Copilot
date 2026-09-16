@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: it-incident-copilot-api
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    envVars:
+      - key: DbProvider
+        value: PostgreSQL
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
