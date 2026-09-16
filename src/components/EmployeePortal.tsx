@@ -246,6 +246,8 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                 {/* Add Reply Input */}
                 <form onSubmit={handleSendComment} className="flex gap-2">
                   <input
+                    id="ticket-comment-input"
+                    name="comment"
                     type="text"
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
@@ -282,8 +284,10 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('problemTitle')}</label>
+              <label htmlFor="ticket-title-input" className="block text-xs font-semibold text-slate-300 mb-1">{t('problemTitle')}</label>
               <input
+                id="ticket-title-input"
+                name="title"
                 type="text"
                 value={newTicketTitle}
                 onChange={(e) => setNewTicketTitle(e.target.value)}
@@ -294,8 +298,10 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('category')}</label>
+              <label htmlFor="ticket-category-select" className="block text-xs font-semibold text-slate-300 mb-1">{t('category')}</label>
               <select
+                id="ticket-category-select"
+                name="category"
                 value={newTicketCategory}
                 onChange={(e) => setNewTicketCategory(e.target.value)}
                 className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-slate-700 text-slate-200 focus:outline-none"
@@ -309,8 +315,10 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Assigned Support Agent</label>
+              <label htmlFor="ticket-assigned-tech-select" className="block text-xs font-semibold text-slate-300 mb-1">Assigned Support Agent</label>
               <select
+                id="ticket-assigned-tech-select"
+                name="assignedTechnician"
                 value={assignedTechnician}
                 onChange={(e) => setAssignedTechnician(e.target.value)}
                 className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-slate-700 text-slate-200 focus:outline-none"
@@ -324,8 +332,10 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('description')}</label>
+              <label htmlFor="ticket-desc-textarea" className="block text-xs font-semibold text-slate-300 mb-1">{t('description')}</label>
               <textarea
+                id="ticket-desc-textarea"
+                name="description"
                 value={newTicketDesc}
                 onChange={(e) => setNewTicketDesc(e.target.value)}
                 rows={3}
@@ -336,8 +346,10 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Attach File (Optional)</label>
+              <label htmlFor="ticket-attachment-input" className="block text-xs font-semibold text-slate-300 mb-1">Attach File (Optional)</label>
               <input
+                id="ticket-attachment-input"
+                name="attachment"
                 type="text"
                 value={attachmentFileName}
                 onChange={(e) => setAttachmentFileName(e.target.value)}
@@ -345,6 +357,7 @@ export const EmployeePortal: React.FC<EmployeePortalProps> = ({
                 className="w-full glass-input text-xs px-3 py-2.5 rounded-xl border-slate-700"
               />
             </div>
+
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button

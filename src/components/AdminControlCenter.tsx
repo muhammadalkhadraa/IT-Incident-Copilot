@@ -142,8 +142,10 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-xs text-slate-400 font-mono">Role:</span>
+                  <label htmlFor={`user-role-select-${usr.id}`} className="text-xs text-slate-400 font-mono">Role:</label>
                   <select
+                    id={`user-role-select-${usr.id}`}
+                    name="role"
                     value={usr.role}
                     onChange={(e) => onUpdateUserRole(usr.id, e.target.value as UserRole)}
                     className="glass-input text-xs px-3 py-1.5 rounded-xl border-slate-700 font-bold text-rose-300 bg-slate-900 font-mono"
@@ -219,8 +221,10 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Full Name</label>
+              <label htmlFor="admin-new-user-name" className="block text-xs font-mono text-slate-400 mb-1">Full Name</label>
               <input
+                id="admin-new-user-name"
+                name="name"
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -231,8 +235,10 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Email Address</label>
+              <label htmlFor="admin-new-user-email" className="block text-xs font-mono text-slate-400 mb-1">Email Address</label>
               <input
+                id="admin-new-user-email"
+                name="email"
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
@@ -244,8 +250,10 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">Assign Role</label>
+                <label htmlFor="admin-new-user-role" className="block text-xs font-mono text-slate-400 mb-1">Assign Role</label>
                 <select
+                  id="admin-new-user-role"
+                  name="role"
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value as UserRole)}
                   className="w-full glass-input text-xs px-3 py-2 rounded-xl border-slate-700 text-slate-200"
@@ -258,8 +266,10 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-1">Department</label>
+                <label htmlFor="admin-new-user-dept" className="block text-xs font-mono text-slate-400 mb-1">Department</label>
                 <input
+                  id="admin-new-user-dept"
+                  name="department"
                   type="text"
                   value={newDepartment}
                   onChange={(e) => setNewDepartment(e.target.value)}
@@ -269,14 +279,17 @@ export const AdminControlCenter: React.FC<AdminControlCenterProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-mono text-slate-400 mb-1">Job Title</label>
+              <label htmlFor="admin-new-user-title" className="block text-xs font-mono text-slate-400 mb-1">Job Title</label>
               <input
+                id="admin-new-user-title"
+                name="title"
                 type="text"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 className="w-full glass-input text-xs px-3 py-2 rounded-xl border-slate-700"
               />
             </div>
+
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button

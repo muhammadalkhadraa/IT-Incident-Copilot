@@ -206,13 +206,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           
           {mode === 'REGISTER' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('nameLabel')}</label>
+              <label htmlFor="auth-register-name" className="block text-xs font-semibold text-slate-300 mb-1">{t('nameLabel')}</label>
               <div className="relative">
                 <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 <input
+                  id="auth-register-name"
+                  name="name"
                   type="text"
                   required
-                  autoComplete="off"
+                  autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Alex Thorne"
@@ -223,13 +225,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">{t('emailLabel')}</label>
+            <label htmlFor="auth-email" className="block text-xs font-semibold text-slate-300 mb-1">{t('emailLabel')}</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
               <input
+                id="auth-email"
+                name="email"
                 type="email"
                 required
-                autoComplete="off"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@corp.internal"
@@ -240,7 +244,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-slate-300">
+              <label htmlFor="auth-password" className="block text-xs font-semibold text-slate-300">
                 {mode === 'FORGOT_PASSWORD' ? t('newPasswordLabel') : t('passwordLabel')}
               </label>
               {mode === 'LOGIN' && (
@@ -257,9 +261,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
               <input
+                id="auth-password"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
                 required
-                autoComplete="new-password"
+                autoComplete={mode === 'REGISTER' || mode === 'FORGOT_PASSWORD' ? 'new-password' : 'current-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
@@ -305,10 +311,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           {/* Confirm New Password Field (Forgot Password Mode) */}
           {mode === 'FORGOT_PASSWORD' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">{t('newPasswordLabel')}</label>
+              <label htmlFor="auth-confirm-password" className="block text-xs font-semibold text-slate-300 mb-1">{t('newPasswordLabel')}</label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                 <input
+                  id="auth-confirm-password"
+                  name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
                   autoComplete="new-password"
@@ -327,6 +335,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
 
               {confirmPassword.length > 0 && (
                 <div className={`mt-1 text-[11px] font-mono flex items-center gap-1 ${doPasswordsMatch ? 'text-emerald-400' : 'text-rose-400'}`}>

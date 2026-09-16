@@ -173,6 +173,9 @@ export const IncidentList: React.FC<IncidentListProps> = ({
           </div>
 
           <select
+            id="incident-status-filter"
+            name="statusFilter"
+            aria-label="Filter by Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="glass-input text-xs px-3 py-1.5 rounded-xl text-slate-300 focus:outline-none"
@@ -181,6 +184,7 @@ export const IncidentList: React.FC<IncidentListProps> = ({
             <option value="OPEN">Open</option>
             <option value="RESOLVED">Resolved</option>
           </select>
+
         </div>
 
         {/* View Toggle & "+ Create Ticket" Button */}

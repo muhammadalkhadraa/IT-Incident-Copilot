@@ -62,11 +62,15 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative hidden sm:block w-48 lg:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
+              id="header-global-search"
+              name="search"
               type="text"
+              aria-label={t('searchPlaceholder')}
               placeholder={t('searchPlaceholder')}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full glass-input text-xs pl-9 pr-3 py-1.5 rounded-lg border-slate-700/80 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
             />
+
           </div>
 
           {/* Language Toggle Button (English ↔ Arabic) */}
