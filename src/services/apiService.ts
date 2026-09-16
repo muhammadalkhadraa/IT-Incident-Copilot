@@ -10,15 +10,9 @@ import type {
 import { PLAYBOOK_LIBRARY, INITIAL_INCIDENTS } from '../data/mockData';
 import { DiagnosticEngine } from './diagnosticEngine';
 
-const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || (isLocalhost ? 'http://localhost:5000/api' : null);
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  if (!API_BASE_URL) {
-    throw new Error('Local API requests disabled on remote host to prevent PNA browser blocks.');
-  }
   const fullOptions: RequestInit = {
     // @ts-ignore - Chrome Private Network Access (PNA) spec option
     targetAddressSpace: 'local',
