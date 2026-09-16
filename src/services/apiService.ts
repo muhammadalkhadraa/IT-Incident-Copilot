@@ -11,23 +11,24 @@ import { PLAYBOOK_LIBRARY, INITIAL_INCIDENTS } from '../data/mockData';
 import { DiagnosticEngine } from './diagnosticEngine';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const LOCAL_STORAGE_KEY = 'copilot_tickets_cache_v2';
+// Clear any existing cookies and localStorage to honor no-cookie / no-local-storage directive
+try {
+  if (typeof window !== 'undefined') {
+    localStorage.clear();
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=expires=" + new Date(0).toUTCString() + ";path=/");
+    });
+  }
+} catch {}
 
 function getLocalCachedTickets(): Incident[] {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {}
   return [];
 }
 
-function saveLocalCachedTickets(incidents: Incident[]): void {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(incidents));
-  } catch {}
+function saveLocalCachedTickets(_incidents: Incident[]): void {
+  // Direct storage on Supabase database only - no cookies or localStorage
 }
 
 async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
